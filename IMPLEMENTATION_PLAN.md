@@ -359,12 +359,12 @@ Rate = **0.10** (derived constant, D11). Discount applies to **workshops only**.
 - **AC-S-4** Given pending fetch/submit, When in-flight, Then no double-submit and no partial state
   corruption.
 
-| AC  | Test                                                                                    | Kind     |
-| --- | --------------------------------------------------------------------------------------- | -------- |
-| S-1 | `facade.test.js` → "fetchSessions/fetchAddons resolve async" + `Wizard.spec.js` loading | PF + SFC |
-| S-2 | `StepReview.spec.js` → "success screen w/ confirmation # + dynamic name/email"          | SFC      |
-| S-3 | `StepReview.spec.js` → "no success on invalid submit"                                   | SFC      |
-| S-4 | `StepReview.spec.js` → "double-submit guarded during pending"                           | SFC      |
+| AC  | Test                                                                                                                                              | Kind     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| S-1 | `facade.test.js` → "fetchSessions/fetchAddons resolve async" + `Wizard.spec.js` loading                                                           | PF + SFC |
+| S-2 | `facade.test.js` → confirmation-number format + echo (primitive) · `StepReview.spec.js` → "success screen w/ confirmation # + dynamic name/email" | PF + SFC |
+| S-3 | `StepReview.spec.js` → "no success on invalid submit"                                                                                             | SFC      |
+| S-4 | `StepReview.spec.js` → "double-submit guarded during pending"                                                                                     | SFC      |
 
 ---
 
@@ -374,7 +374,7 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 
 ### Phase 2 — Foundation
 
-- [ ] `feat(data)` JSDoc typedefs + mock normalizers; **async facade** (D1). Parse ISO once at the edge.
+- [x] `feat(data)` JSDoc typedefs + mock normalizers; **async facade** (D1). Parse ISO once at the edge.
 - [ ] `feat(utils)` currency formatter (D5) + wall-clock date-range & day-key helpers (D4).
 - [ ] `feat(logic)` pure interval-overlap + conflict detection (D6) — derived from data, not the file.
 - [ ] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`

@@ -198,3 +198,37 @@ entry (the per-commit journaling rule is unchanged); a multi-commit PR just land
 several `##` sections at once. Updated `CLAUDE.md` §1.6/§2.6/§5, the PR template,
 and the §9 review log (now per-PR) to match.
 
+## feat(data): async facade over mocks + JSDoc-typed normalizers
+
+First code of the wizard, and deliberately the least glamorous part: the data
+edge. This is the opening commit of the "pure business-logic foundation" PR —
+logic and its tests, no UI and no reactivity yet, so the numeric acceptance
+criteria go green independently of any component.
+
+The mocks are plain synchronous arrays, but loading and pending states are part
+of the spec (the Step 2 session list, the Step 4 submit). So rather than import
+the arrays directly, everything goes through a thin **async facade**
+(`src/data/facade.js`) — `fetchEvent` / `fetchSessions` / `fetchAddons` /
+`submitRegistration`, each resolving after a small simulated latency. That makes
+real loading affordances possible, and swapping the bodies for `fetch()` later
+changes nothing downstream. This is decision **D1**.
+
+`src/data/normalize.js` parses each ISO timestamp (`2028-11-15T09:00:00Z`) into a
+`Date` **once, here at the edge**, exposing `start` / `end` so nothing further in
+the app ever re-parses a raw string. The JSDoc `@typedef`s for `Session`
+and `Addon` document the shapes — the plain-JS alternative to TypeScript
+interfaces the constitution requires.
+
+### AI follow-up questions
+
+- **Where should the confirmation number come from?** I put
+  `generateConfirmationNumber` (`WDS-XXXXXXXX`) in the facade: it's the
+  "server" assigning it on submit, not view logic. The success-screen wiring
+  (AC-S-2 proper) is a later Step 4 commit; this just delivers and tests the
+  primitive so the format is nailed down early.
+
+### Verification
+
+`facade.test.js` asserts the fetchers resolve asynchronously to the normalized
+shape (parsed `Date`s, 12 sessions / 8 add-ons) — that is **AC-S-1** — plus the
+confirmation-number format and registration echo behind **AC-S-2**.
