@@ -462,10 +462,10 @@ _Toolchain note:_ the repo needs Node 22.17 / yarn 4.6 while the shell defaults 
 
 ## 9. Review log (human review gate — §2.6)
 
-Per-commit record of the human `review` gate. One row per reviewed commit (or PR when a PR
-carries one logical commit). "Approved/merged" is set only by a human — the agent never
-self-approves.
+Per-PR record of the human `review` gate — one row per merged PR (a PR is the review unit,
+sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
+agent never self-approves.
 
-| Commit (SHA / subject) | PR    | Reviewer | Status              |
-| ---------------------- | ----- | -------- | ------------------- |
-| _(none yet)_           | _n/a_ | _n/a_    | _awaiting first PR_ |
+| PR    | Theme / branch | Reviewer | Status              |
+| ----- | -------------- | -------- | ------------------- |
+| _n/a_ | _(none yet)_   | _n/a_    | _awaiting first PR_ |

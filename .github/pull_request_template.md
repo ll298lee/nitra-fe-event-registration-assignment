@@ -1,6 +1,7 @@
 <!--
 This template enforces the Review (human) gate defined in CLAUDE.md §2 step 6.
-Review is per commit — keep this PR small (prefer one logical commit).
+The PR is the unit of review — size it to ~20 min of senior-engineer review (one coherent
+theme; multiple small commits fine). Split it if larger.
 Fill every section. Delete nothing; write "n/a" where a section doesn't apply.
 -->
 
@@ -45,4 +46,4 @@ Fill every section. Delete nothing; write "n/a" where a section doesn't apply.
 
 **Reviewer sign-off** (human — the author/agent must NOT self-approve or self-merge):
 
-- [ ] Reviewed commit-by-commit; judgment calls above are sound; approved to merge
+- [ ] Reviewed the full PR; judgment calls above are sound; approved to merge

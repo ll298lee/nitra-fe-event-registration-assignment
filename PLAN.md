@@ -12,10 +12,11 @@ back to a rule in the spec rather than to vibes.
 
 The final gate is **review, done through GitHub**. No change counts as done until
 it's on a branch, opened as a pull request, and approved + merged by a human (me)
-— never committed straight to `main`. Review is per commit, and every PR uses a
-template (`.github/pull_request_template.md`) that forces the agent to spell out
-its judgment calls, traps, and open questions, so review time lands where it
-matters. The agent opens the PR and then hands off: it can't approve or merge its
+— never committed straight to `main`. Review happens **per PR**, each sized to
+roughly 20 minutes of a senior engineer's review, so a PR is one coherent change
+(often several small commits) rather than a giant drop. Every PR uses a template
+(`.github/pull_request_template.md`) that forces the agent to spell out its
+judgment calls, traps, and open questions, so review time lands where it matters. The agent opens the PR and then hands off: it can't approve or merge its
 own work, and it confirms the outcome by pulling PR state with the `gh` CLI
 rather than assuming.
 
@@ -185,4 +186,15 @@ flow). §4 gained a rule that new frames are cataloged with their nodeId and hav
 tokens reconciled before implementation. I deliberately did **not** create the
 `SPEC_ADDENDUM.md` file yet — the procedure is documented, but an empty addendum
 would just be noise until real scope actually arrives.
+
+## docs: size PRs by review effort, not one-commit-each
+
+One commit per PR turned out too granular. Changed the review gate so the **PR**
+is the unit of review, sized to roughly **20 minutes of a senior engineer's
+review** — a coherent, single-theme change that usually spans several small,
+atomic commits, split into more than one PR if it would take materially longer to
+review well. Commits stay small and each still carries its own `PLAN.md` journal
+entry (the per-commit journaling rule is unchanged); a multi-commit PR just lands
+several `##` sections at once. Updated `CLAUDE.md` §1.6/§2.6/§5, the PR template,
+and the §9 review log (now per-PR) to match.
 
