@@ -14,7 +14,7 @@
 We build the 4-step event-registration wizard (Attendee Info → Session Selection → Add-ons →
 Review & Submit) under **spec-driven development**. Each arrow is a blocking gate:
 
-**specify → plan → tasks → implement → verify**
+**specify → plan → tasks → implement → verify → review**
 
 - **`README.md`** is the immutable **functional** spec (fields, validation, pricing, capacity,
   conflict logic). Read-only — never edited.
@@ -23,8 +23,10 @@ Review & Submit) under **spec-driven development**. Each arrow is a blocking gat
 - Every acceptance criterion in §5 is Given/When/Then and maps to a named Vitest case **or** a
   visual `agent-browser` vs Figma check. If a rule can't be written as a failing test, it isn't
   specified yet.
-- **Definition of done:** `yarn check` (ESLint + Prettier) and `yarn test:unit:ci` green, and the UI
-  matches its Figma frame.
+- **Definition of done:** `yarn check` (ESLint + Prettier) and `yarn test:unit:ci` green, the UI
+  matches its Figma frame, **and the commit's PR is human-approved and merged** (the `review`
+  gate — `CLAUDE.md` §2 step 6). The agent never self-approves or self-merges; PRs are logged in
+  §9.
 
 All numbers in this plan were verified directly against `src/mocks/{event,sessions,addons}.js`, the
 UnoCSS token files, and `quasar.config.js` — not from memory.
@@ -446,6 +448,24 @@ here. None is silently hardcoded.
      requirement clears live.
 5. **Constraints honored:** plain JS only; UnoCSS tokens only (no hex); README unedited; this file
    kept in sync as tasks complete.
+6. **Human review passed:** the commit is on a branch, opened as a PR against `main`, its judgment
+   calls surfaced per the PR template, and a human approves + merges it. The agent never
+   self-approves or self-merges. It confirms approval/merge by _pulling_ state on its next turn
+   (`gh pr view <n> --json state,mergedAt,reviewDecision`; `git fetch` cross-check) and ingests any
+   change-requests via `gh pr view <n> --comments` / `gh api` (review comments live in GitHub's
+   API, not git), then pushes fixes to the same branch. Logged in §9.
 
 _Toolchain note:_ the repo needs Node 22.17 / yarn 4.6 while the shell defaults to Node 20 / yarn
 1.22 — prefix commands with the nvm + corepack prelude before running `yarn check` / `yarn test:unit`.
+
+---
+
+## 9. Review log (human review gate — §2.6)
+
+Per-commit record of the human `review` gate. One row per reviewed commit (or PR when a PR
+carries one logical commit). "Approved/merged" is set only by a human — the agent never
+self-approves.
+
+| Commit (SHA / subject) | PR    | Reviewer | Status              |
+| ---------------------- | ----- | -------- | ------------------- |
+| _(none yet)_           | _n/a_ | _n/a_    | _awaiting first PR_ |
