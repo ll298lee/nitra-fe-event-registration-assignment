@@ -37,7 +37,7 @@ against those sources.
    (This is distinct from the submission `PLAN.md` referenced by `README.md` §Submission —
    do not conflate the two.)
 6. **Gates are green before "done."** `yarn check` (ESLint + Prettier) and `yarn test:unit`
-   must pass, and the UI must match Figma, **and the commit's PR must be human-approved and
+   must pass, and the UI must match Figma, **and the change's PR must be human-approved and
    merged** (see §2 step 6), before any change is considered complete.
 
 ---
@@ -65,11 +65,17 @@ frame in Figma.
    to an acceptance criterion), visual parity vs Figma via `agent-browser`, and
    `yarn check && yarn test:unit` green.
 6. **Review (human)** — _gate: definition of done._ Every change is reviewed by a human on
-   GitHub before it counts as done. Review is **per commit**: keep commits small and
-   atomic (each already names its spec area — §5).
+   GitHub before it counts as done. **The unit of review is the PR** — size it to roughly
+   **20 minutes of review for a senior engineer**: one coherent, single-theme change a
+   reviewer can hold in their head and check carefully in one sitting. A PR may (and
+   usually will) contain **several small, atomic commits**; if a change would take a senior
+   materially longer than ~20 min to review well, split it into more than one PR. Err on
+   the side of smaller. (Soft proxy, not a hard limit: often a few hundred lines of
+   substantive diff.)
    - Work lives on a **branch**, never committed directly to `main`. Each commit carries
      its matching `PLAN.md` journal entry (§5) — a commit without one is not review-ready.
-   - Open a PR against `main` with `gh pr create` (prefer one logical commit per PR). The
+   - Open a PR against `main` with `gh pr create` (one coherent theme; multiple commits are
+     fine). The
      description links the `README.md` rule(s) and Figma frame(s) implemented, the
      acceptance-criteria→test map from `IMPLEMENTATION_PLAN.md`, and an AI-usage note.
    - The PR **must surface the agent's own judgment** so the reviewer knows where to look
@@ -82,8 +88,7 @@ frame in Figma.
      catch issues before a human looks.
    - **The agent MUST stop here and hand off. It may not approve or merge its own PR.**
      The **human approves and merges**; merging is never the agent's job.
-   - A commit is done only after a human approves it on GitHub (commit-by-commit when a PR
-     carries several) and it is merged.
+   - A change is done only after a human approves the **PR** on GitHub and it is merged.
    - **How the agent confirms approval & ingests feedback.** The agent has no background
      listener — it never gets pushed a notification. On its **next turn** it must _pull_
      the PR state, and never trust its own memory of it:
@@ -191,7 +196,8 @@ for it only if `figma-mcp-free` is insufficient.
   (ESLint + Prettier) · `yarn fix` · `yarn test:unit` (watch) · `yarn test:unit:ci` (once).
 - **Commits:** conventional commits (repo uses `feat:` / `chore:` / `style:`); name the
   spec area (e.g. `feat: step 3 add-ons running total`). Keep commits **small and atomic** —
-  each commit is the unit of human review (§2.6).
+  they're the building blocks of a PR, but the **PR is the unit of human review** (§2.6),
+  sized to ~20 min of senior review.
 - **`PLAN.md` journal (per commit):** every commit **must also add or update a matching
   `##` section in `PLAN.md`** — the submission narrative (§1.5; distinct from
   `IMPLEMENTATION_PLAN.md`, do not conflate). `PLAN.md` mirrors the commit history one
@@ -204,6 +210,7 @@ for it only if `figma-mcp-free` is insufficient.
   - the journal entry lands **in the same commit** as the change it documents — never a
     separate trailing "docs" commit, and never left for later.
 - **Branches & PRs:** never commit feature work to `main`. Branch per change
-  (e.g. `feat/step-1-attendee-info`), open a PR against `main` via `gh pr create` (the
+  (e.g. `feat/step-1-attendee-info`) scoped to one ~20-min-review theme (several commits
+  fine), open a PR against `main` via `gh pr create` (the
   `.github/pull_request_template.md` checklist is auto-loaded), and hand off for human
   approval — the agent never self-approves or self-merges.
