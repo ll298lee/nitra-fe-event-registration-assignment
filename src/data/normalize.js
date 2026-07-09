@@ -63,7 +63,10 @@ export function normalizeSession(raw) {
  */
 export function normalizeAddon(raw) {
   const addon = { ...raw };
-  if (raw.date) {
+  // Attach a time slot only when it is *complete* — a lone `date` without a
+  // valid `endDate` would otherwise become an Invalid Date `end` that passes
+  // truthiness guards and silently breaks conflict comparisons.
+  if (raw.date && raw.endDate) {
     addon.start = new Date(raw.date);
     addon.end = new Date(raw.endDate);
   }

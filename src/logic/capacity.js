@@ -6,12 +6,15 @@
  */
 
 /**
+ * An absent `registered` count is read as 0, so `isFull` and `remainingSpots`
+ * stay consistent (not-full / full-remaining) rather than disagreeing (one
+ * returning `false` while the other returns `NaN`).
  * @param {{ capacity?: number, registered?: number }} item
  * @returns {boolean} True when the item is at or over capacity.
  */
 export function isFull(item) {
   if (item.capacity == null) return false;
-  return item.registered >= item.capacity;
+  return (item.registered ?? 0) >= item.capacity;
 }
 
 /**
@@ -20,5 +23,5 @@ export function isFull(item) {
  */
 export function remainingSpots(item) {
   if (item.capacity == null) return null;
-  return Math.max(0, item.capacity - item.registered);
+  return Math.max(0, item.capacity - (item.registered ?? 0));
 }

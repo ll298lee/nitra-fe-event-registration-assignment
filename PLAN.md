@@ -321,3 +321,38 @@ strictly-overlapping session pairs by brute force and confirmed they are exactly
 `s2/s3, s4/s5, s8/s9, s11/s12`, reducing to `s4/s5, s11/s12` once the full
 sessions are filtered — and that `ws1` clashes with `s11`/`s12` but not the
 14:00Z-touching `s10`. No discrepancies.
+
+## fix(data): harden the data edge against partial payloads (code-review prep)
+
+Before opening the PR I ran the `/code-review` skill over the branch as prep (not
+the review gate itself — that's still a human). It surfaced no confirmed bugs, but
+four "plausible" latent gaps, all of the same shape: safe against the frozen
+mocks, but a hazard the moment the D1 facade is swapped for a real `fetch` and a
+partial or malformed payload flows through. Since the whole point of that seam is
+to face a real API, I hardened it (decision **D17**):
+
+- **`capacity` treats a missing `registered` as 0.** Previously a capped item with
+  no `registered` made `isFull` return `false` while `remainingSpots` returned
+  `NaN` — two predicates disagreeing on the same item. Now they agree
+  (not-full / full-remaining).
+- **`normalizeAddon` attaches a time slot only when both `date` and `endDate`
+  exist.** A lone `date` used to produce an `Invalid Date` `end`, which is truthy
+  (so it slips past the `!addon.end` guard) and makes every overlap comparison
+  silently `false` — a workshop that hides its own conflicts. An incomplete slot
+  is now simply not attached.
+- **The confirmation number draws 8 uniform `[A-Z0-9]` characters** instead of
+  `base36(random).slice(2,10).padEnd(8,'0')`, which biased short fractions toward
+  a `0`-heavy suffix and quietly cut uniqueness.
+
+I deliberately did **not** add guards to `detectConflicts` / `conflictingSessions`
+for un-normalized sessions. That would duplicate the "parse once at the edge"
+invariant the whole `normalize` layer exists to uphold; the right place to keep
+data honest is the edge, and downstream logic trusts the parsed `start`/`end`.
+That trade-off is the second half of D17.
+
+### Verification
+
+New tests: `normalize.test.js` (timed vs non-timed add-ons, and the incomplete-slot
+guard) and a `capacity.test.js` case for the missing-`registered` consistency. The
+existing confirmation-number format test still passes. Full suite green:
+`yarn check` + `yarn test:unit:ci`.

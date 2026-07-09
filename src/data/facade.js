@@ -49,7 +49,13 @@ export async function fetchAddons() {
  * @returns {string}
  */
 export function generateConfirmationNumber() {
-  const body = Math.random().toString(36).slice(2, 10).toUpperCase().padEnd(8, '0');
+  // Draw 8 uniform chars from [A-Z0-9]. (Not base-36-of-random + padEnd — that
+  // biases short fractions toward a '0'-heavy suffix and loses uniqueness.)
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let body = '';
+  for (let i = 0; i < 8; i++) {
+    body += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
   return `WDS-${body}`;
 }
 

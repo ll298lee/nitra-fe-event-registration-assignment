@@ -45,3 +45,14 @@ describe('remainingSpots — capacity − registered', () => {
     expect(remainingSpots(addon.merch1)).toBeNull();
   });
 });
+
+describe('partial data (defensive)', () => {
+  // Not reachable from the mocks, but the facade (D1) is built to be swapped for
+  // a real API. A capped item with a missing `registered` count must keep the
+  // two predicates consistent: not-full + full remaining, never NaN.
+  it('missing registered is read as 0, keeping isFull/remainingSpots consistent', () => {
+    const item = { capacity: 100 };
+    expect(isFull(item)).toBe(false);
+    expect(remainingSpots(item)).toBe(100);
+  });
+});
