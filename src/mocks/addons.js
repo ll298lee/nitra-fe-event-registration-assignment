@@ -12,7 +12,8 @@ export const addons = [
     id: 'ws1',
     category: 'workshop',
     name: 'Hands-on Vue.js Testing',
-    description: 'Write unit and component tests with Vitest and Vue Test Utils. Bring your laptop.',
+    description:
+      'Write unit and component tests with Vitest and Vue Test Utils. Bring your laptop.',
     price: 149,
     date: '2028-11-16T14:00:00Z',
     endDate: '2028-11-16T17:00:00Z',
@@ -82,4 +83,4 @@ export const addons = [
     sizes: ['13"', '15"', '16"'],
     maxQuantity: 1,
   },
-]
+];

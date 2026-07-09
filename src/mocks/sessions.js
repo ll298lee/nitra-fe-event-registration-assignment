@@ -20,7 +20,8 @@ export const sessions = [
     endDate: '2028-11-15T10:00:00Z',
     capacity: 500,
     registered: 487,
-    description: 'Explore the latest web platform APIs and what they mean for developers in 2028 and beyond.',
+    description:
+      'Explore the latest web platform APIs and what they mean for developers in 2028 and beyond.',
   },
   {
     id: 's2',
@@ -32,7 +33,8 @@ export const sessions = [
     endDate: '2028-11-15T11:30:00Z',
     capacity: 120,
     registered: 120,
-    description: 'Deep dive into composables, render functions, and performance optimization techniques.',
+    description:
+      'Deep dive into composables, render functions, and performance optimization techniques.',
   },
   {
     id: 's3',
@@ -68,7 +70,8 @@ export const sessions = [
     endDate: '2028-11-15T15:00:00Z',
     capacity: 90,
     registered: 52,
-    description: 'Query optimization, indexing strategies, and monitoring for PostgreSQL and MySQL.',
+    description:
+      'Query optimization, indexing strategies, and monitoring for PostgreSQL and MySQL.',
   },
   {
     id: 's6',
@@ -80,7 +83,8 @@ export const sessions = [
     endDate: '2028-11-15T17:00:00Z',
     capacity: 100,
     registered: 41,
-    description: 'Build reliable, fast CI/CD pipelines using GitHub Actions, Docker, and Kubernetes.',
+    description:
+      'Build reliable, fast CI/CD pipelines using GitHub Actions, Docker, and Kubernetes.',
   },
 
   // ── Day 2: November 16, 2028 ──
@@ -118,7 +122,8 @@ export const sessions = [
     endDate: '2028-11-16T12:00:00Z',
     capacity: 90,
     registered: 90,
-    description: 'Event-driven architectures, message queues, and gRPC for service-to-service communication.',
+    description:
+      'Event-driven architectures, message queues, and gRPC for service-to-service communication.',
   },
   {
     id: 's10',
@@ -156,4 +161,4 @@ export const sessions = [
     registered: 67,
     description: 'Deploy serverless functions at the edge for ultra-low latency applications.',
   },
-]
+];

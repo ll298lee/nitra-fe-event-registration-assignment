@@ -1,4 +1,4 @@
-import UnoCSS from 'unocss/vite'
+import UnoCSS from 'unocss/vite';
 
 export default function () {
   return {
@@ -14,20 +14,18 @@ export default function () {
       },
       extendViteConf(viteConf) {
         viteConf.plugins = viteConf.plugins || [];
-        viteConf.plugins.push(
-          ...UnoCSS(),
-        );
+        viteConf.plugins.push(...UnoCSS());
       },
     },
 
     devServer: {
       open: true,
-      port: 9001
+      port: 9001,
     },
 
     framework: {
       config: {},
       plugins: [],
     },
-  }
+  };
 }

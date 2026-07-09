@@ -18,7 +18,6 @@ You are free to install additional dependencies (e.g. date-fns, lodash-es) — p
 
 **Fields:**
 
-
 | Field            | Type  | Validation                                                                 |
 | ---------------- | ----- | -------------------------------------------------------------------------- |
 | Full Name        | text  | required                                                                   |
@@ -28,18 +27,15 @@ You are free to install additional dependencies (e.g. date-fns, lodash-es) — p
 | Job Title        | text  | required                                                                   |
 | Shipping Address | text  | optional — becomes **required** when any merchandise is selected in Step 3 |
 
-
 **Ticket Type Selection:**
 
 Display three ticket cards. Only one can be selected at a time.
-
 
 | Ticket  | Price | Perks                                                             |
 | ------- | ----- | ----------------------------------------------------------------- |
 | General | $299  | All sessions, keynotes, lunch                                     |
 | VIP     | $599  | General + VIP lounge, speaker meet & greet, **10% off workshops** |
 | Student | $99   | All sessions, keynotes                                            |
-
 
 > No inline validation on this step — all validation runs at Step 4 submit time.
 
@@ -59,7 +55,7 @@ Display three ticket cards. Only one can be selected at a time.
 1. **Group by category** — display in sections: Workshops / Meal Packages / Merchandise.
 2. **Workshop time conflicts** — workshops have time slots. If a workshop overlaps with any session selected in Step 2, mark it as unavailable.
 3. **Merchandise options** — some items have `sizes` (size selector) and `maxQuantity` (quantity picker).
-4. **Shipping banner** — when any merchandise item is added, display an info banner: *"Merchandise items will be shipped to your address one week before the conference. Please ensure your shipping address in Step 1 is correct."*
+4. **Shipping banner** — when any merchandise item is added, display an info banner: _"Merchandise items will be shipped to your address one week before the conference. Please ensure your shipping address in Step 1 is correct."_
 5. **Running total** — display a live-updating order summary with ticket price, selected add-ons, VIP discount (10% off workshops), and total.
 6. **Currency formatting** — all prices shown as `$X,XXX.XX` format.
 
@@ -84,7 +80,6 @@ This project uses the Nitra semantic design token system. All tokens are availab
 <div class="text-neutral bg-surface-l1 border border-neutral-muted">...</div>
 ```
 
-
 | Category   | Example Shortcuts                                          |
 | ---------- | ---------------------------------------------------------- |
 | Text       | `text-neutral`, `text-danger`, `text-brand`                |
@@ -93,7 +88,6 @@ This project uses the Nitra semantic design token system. All tokens are availab
 | Divider    | `divider-default`, `divider-emphasis`                      |
 | Typography | `text-h1` to `text-h4`, `text-subtitle1`, `text-subtitle2` |
 
-
 > Refer to `src/unocss/semantic.js` for the full list. **Do not hardcode hex color values** — always use the provided tokens.
 
 ---
@@ -101,4 +95,3 @@ This project uses the Nitra semantic design token system. All tokens are availab
 ## Submission
 
 Please refer to the **Official Interview Doc** sent to you by HR for the full submission requirements (expected effort, deadline, `PLAN.md` spec, commit history, AI usage notes, and how to deliver). That document is the authoritative source — if anything here conflicts, follow the Official Doc.
-

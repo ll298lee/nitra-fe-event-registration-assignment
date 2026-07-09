@@ -1,4 +1,4 @@
-import { green, orange, red, blue, yellow, gray } from './colors.js'
+import { green, orange, red, blue, yellow, gray } from './colors.js';
 
 export const semanticColors = {
   text: {
@@ -262,7 +262,7 @@ export const semanticColors = {
     muted: 'rgba(0, 0, 0, 0.05)',
     quiet: 'rgba(0, 0, 0, 0.02)',
   },
-}
+};
 
 export const semanticTextShortcut = {
   'text-neutral': 'text-[var(--text-neutral-default)]',
@@ -285,7 +285,7 @@ export const semanticTextShortcut = {
   'text-info-emphasis': 'text-[var(--text-info-emphasis)]',
   'text-warning': 'text-[var(--text-warning-default)]',
   'text-warning-emphasis': 'text-[var(--text-warning-emphasis)]',
-}
+};
 
 export const semanticBgShortcut = {
   'bg-surface-l0': 'bg-[var(--bg-surface-l0)]',
@@ -386,7 +386,7 @@ export const semanticBgShortcut = {
   'bg-warning-quiet-rest': 'bg-[var(--bg-warning-quiet-rest)]',
   'bg-warning-quiet-hover': 'bg-[var(--bg-warning-quiet-hover)]',
   'bg-warning-quiet-active': 'bg-[var(--bg-warning-quiet-active)]',
-}
+};
 
 export const semanticBorderShortcut = {
   'border-brand-emphasis': 'border-[var(--border-brand-emphasis)]',
@@ -416,7 +416,7 @@ export const semanticBorderShortcut = {
   'border-info-quiet': 'border-[var(--border-info-quiet)]',
   'border-warning-opacity': 'border-[var(--border-warning-opacity)]',
   'border-warning-quiet': 'border-[var(--border-warning-quiet)]',
-}
+};
 
 export const semanticShortcuts = [
   semanticTextShortcut,
@@ -428,4 +428,4 @@ export const semanticShortcuts = [
     'divider-muted': 'border-[var(--divider-muted)]',
     'divider-quiet': 'border-[var(--divider-quiet)]',
   },
-]
+];

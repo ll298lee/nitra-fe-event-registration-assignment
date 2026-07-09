@@ -10,7 +10,7 @@ export const teal = {
   700: '#264D4F',
   800: '#1E3C3E',
   900: '#162B2D',
-}
+};
 
 export const gray = {
   0: '#F4F5F6',
@@ -24,7 +24,7 @@ export const gray = {
   700: '#5C6970',
   800: '#454F54',
   900: '#2E3538',
-}
+};
 
 export const magenta = {
   0: '#FCF6FE',
@@ -38,7 +38,7 @@ export const magenta = {
   700: '#981DC3',
   800: '#751697',
   900: '#53106B',
-}
+};
 
 export const purple = {
   0: '#F4F2FD',
@@ -52,7 +52,7 @@ export const purple = {
   700: '#472EAF',
   800: '#352479',
   900: '#2A1E5B',
-}
+};
 
 export const navy = {
   0: '#F0F4F9',
@@ -66,7 +66,7 @@ export const navy = {
   700: '#264163',
   800: '#1B2E46',
   900: '#142234',
-}
+};
 
 export const blue = {
   0: '#EDF6FD',
@@ -80,7 +80,7 @@ export const blue = {
   700: '#115383',
   800: '#0C3C5F',
   900: '#092B44',
-}
+};
 
 export const slate = {
   0: '#F5F8F9',
@@ -94,7 +94,7 @@ export const slate = {
   700: '#486F7F',
   800: '#36525E',
   900: '#23363E',
-}
+};
 
 export const green = {
   0: '#EAFBF4',
@@ -108,7 +108,7 @@ export const green = {
   700: '#0D7248',
   800: '#095234',
   900: '#0D7248',
-}
+};
 
 export const yellow = {
   0: '#FFFEF5',
@@ -122,7 +122,7 @@ export const yellow = {
   700: '#B8A40A',
   800: '#918108',
   900: '#6A5F06',
-}
+};
 
 export const amber = {
   0: '#FDF7ED',
@@ -136,7 +136,7 @@ export const amber = {
   700: '#9D6510',
   800: '#7D500D',
   900: '#583809',
-}
+};
 
 export const orange = {
   0: '#FFF2EB',
@@ -150,7 +150,7 @@ export const orange = {
   700: '#A13B02',
   800: '#792C02',
   900: '#501D01',
-}
+};
 
 export const red = {
   0: '#FDF1F1',
@@ -164,4 +164,4 @@ export const red = {
   700: '#831111',
   800: '#6C0E0E',
   900: '#480909',
-}
+};
