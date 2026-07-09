@@ -1,9 +1,14 @@
 <script setup>
-// Custom, token-styled progress stepper (IMPLEMENTATION_PLAN.md D13) — Quasar's
-// Material QStepper defaults fight the Figma design, so this is hand-built from
-// semantic tokens. Presentational: it renders `steps` at `current` and emits
-// `select` when a step is clicked. Navigation is free/non-linear (every step is
-// clickable, no validation gate); the parent owns the actual step change.
+// Custom, token-styled progress stepper (IMPLEMENTATION_PLAN.md D13), built to the
+// measured Step 1 / Step 4 Figma values. Presentational: renders `steps` at
+// `current` and emits `select` on click. Free/non-linear navigation — every step is
+// clickable, no validation gate; the parent owns the step change.
+//
+// Figma: circle 32px; current/completed = teal (bg-brand-emphasis-rest) with white
+// number / white 2px check; upcoming = gray[50] (bg-surface-l2) with a 0.4 number.
+// Label 14px (Figma 13px — no exact token; nearest on-scale is text-md/14, see §4),
+// weight current=semibold / completed=medium / upcoming=regular; upcoming color 0.4.
+// Connector 2px: teal once the prior step is done, else gray[50].
 
 const props = defineProps({
   /** @type {{ key?: string, label: string }[]} */
@@ -14,17 +19,20 @@ const props = defineProps({
 
 const emit = defineEmits(['select']);
 
-// Completed (i < current) and current (i === current) share the brand-teal
-// circle with white content; upcoming (i > current) is a muted gray circle.
 function circleClass(i) {
   return i <= props.current
     ? 'bg-brand-emphasis-rest text-inverse'
-    : 'bg-surface-l2 text-neutral-muted';
+    : 'bg-surface-l2 text-neutral-quiet';
 }
 
-// The connector after step i is teal once step i is completed, else gray.
+function labelClass(i) {
+  if (i === props.current) return 'text-neutral font-semibold';
+  if (i < props.current) return 'text-neutral font-medium';
+  return 'text-neutral-quiet font-regular';
+}
+
 function connectorClass(i) {
-  return i < props.current ? 'bg-brand-emphasis-rest' : 'bg-surface-l3';
+  return i < props.current ? 'bg-brand-emphasis-rest' : 'bg-surface-l2';
 }
 </script>
 
@@ -38,15 +46,13 @@ function connectorClass(i) {
         @click="emit('select', i)"
       >
         <span
-          class="flex h-8 w-8 items-center justify-center rounded-full font-semibold"
+          class="text-md flex h-8 w-8 items-center justify-center rounded-full font-semibold"
           :class="circleClass(i)"
         >
-          <q-icon v-if="i < current" name="check" size="18px" />
+          <q-icon v-if="i < current" name="check" size="16px" />
           <span v-else>{{ i + 1 }}</span>
         </span>
-        <span class="text-subtitle2" :class="i > current ? 'text-neutral-muted' : 'text-neutral'">
-          {{ step.label }}
-        </span>
+        <span class="text-md" :class="labelClass(i)">{{ step.label }}</span>
       </button>
 
       <span

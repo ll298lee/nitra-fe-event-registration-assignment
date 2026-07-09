@@ -302,3 +302,22 @@ pixel-perfect `agent-browser` comparison (via computed styles, not eyeballing) a
 blocking verify gate, §4 adds exact-measurement extraction + in-browser
 verification, and a new **"silent visual approximation"** anti-pattern bans
 rounding a measured value to a "close enough" token without recording it.
+
+## fix(shell): match Figma exactly — fonts, dividers, button sizing
+
+Re-measured Step 1 / Step 4 in Figma and corrected the shell to the exact values,
+verified in-browser with `getComputedStyle`:
+
+- **Header bottom divider now renders** (the reported bug) — it was
+  `border-neutral-muted` with no explicit border-style, so `border-b` produced no
+  visible line. Now `divider-default` (`rgba(0,0,0,0.1)`) 1px `border-solid`, on the
+  header, stepper, and footer.
+- **Fonts corrected to Figma:** event title `text-subtitle1`(16) → **`text-h4`(20)**;
+  step title `text-h2`(28) → **`text-h3`(24)**; stepper label per-state weights +
+  `text-neutral-quiet` upcoming; buttons `text-subtitle2`/`text-subtitle1` (14/16).
+- **Exact insets** (header 48px / body 120px) and **exact button sizing** (40/48px
+  height, 10/12px radius, trailing chevrons); todo connector `bg-surface-l2` per Figma.
+
+Discrepancies recorded in §4 (no silent rounding): stepper label 13px → `text-md`(14,
+nearest); Figma weights 680/600/500/400 → nearest token weights; 10px radius →
+`rounded-[10px]`; native `<button>` over `QBtn` for exact sizing.

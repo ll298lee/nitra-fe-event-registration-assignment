@@ -99,13 +99,30 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   (`bg-accent-muted-rest` / `text-accent-emphasis`), `backend` → info
   (`bg-info-subtle-rest` / `text-info-emphasis`), `devops` → accent. No dedicated track token
   exists; these reuse existing palettes — never hardcode a hex.
-- **Shell + stepper (resolved for the shell PR, from Step 1 `1069:968` / Step 4 `1074:897`):**
-  vertical band layout — header (teal `bg-brand-emphasis-rest` logo tile + dynamic event name,
-  `text-subtitle1`) → stepper → content (`text-h2` step title) → footer action bar; centered
-  `max-w-[1200px]` column. Stepper per D13. Footer: single primary right-aligned on step 1,
-  Back (left, `bg-surface-l3`) + primary (right, `bg-accent-emphasis-rest` / `text-inverse`) on
-  later steps. **No token discrepancies** (verified via `export_tokens`); minor judgment calls:
-  hairline dividers use `border-neutral-muted`, the "todo" connector uses `bg-surface-l3`.
+- **Shell + stepper — exact measured values (Step 1 `1069:968` / Step 4 `1074:897`, verified
+  in-browser via `getComputedStyle`):** vertical band layout, **Figma insets replicated** —
+  header `48px` (`px-12`), stepper/content/footer `120px` (`px-30`); header `72px`, stepper
+  `80px`. Header: `40px` teal `bg-brand-emphasis-rest` logo tile + dynamic event name at
+  **`text-h4` (20px)**; step title **`text-h3` (24px)**. **Chrome dividers = `divider-default`
+  (`rgba(0,0,0,0.1)`) 1px `border-solid`** below header + stepper and above the footer (the
+  earlier `border-neutral-muted` was the wrong color _and_ needed an explicit border-style — it
+  was rendering as no border). Stepper (D13): 32px circles, current/completed teal + white
+  number/check, upcoming `bg-surface-l2` + `text-neutral-quiet`; label weights
+  current=semibold / completed=medium / upcoming=regular; **todo connector `bg-surface-l2`
+  (gray[50])** per Figma. Footer buttons: Next `40px`/`rounded-[10px]`/`text-subtitle2`, Submit
+  `48px`/`rounded-xl`/`text-subtitle1`, Back `bg-neutral-muted-rest` + `text-neutral-muted`;
+  primary `bg-accent-emphasis-rest` (`#FB7429`) + trailing chevron.
+- **Shell discrepancies (measured value → resolution, per §1.3/§4 — no silent rounding):**
+  (1) **stepper label 13px** → **`text-md` (14px)**, the nearest on-scale token (scale has 12/14,
+  no 13). (2) **Figma font-weights 680/600/500/400** → nearest token weights **630/610/570/485**
+  (`font-bold`/`semibold`/`medium`/`regular`); only 610 matches exactly. (3) **button radius 10px**
+  → `rounded-[10px]` (arbitrary; scale jumps 8→12), Submit's 12px = `rounded-xl`. (4) **native
+  `<button>` for footer/stepper controls** (not `QBtn`) for exact height/radius/padding fidelity;
+  `QBtn`'s min-height/padding fight the measured `40/48px`. Interactive states use the
+  `-rest/-hover/-active` token triples. (5) **Header logo glyph** approximated with a Quasar
+  `event` icon (no exported asset); **Next/Submit use `chevron_right`, Back `chevron_left`** (Figma's
+  generic chevron read as down; forward/back is the clear intent). (6) **Responsive** not in Figma
+  (fixed 1440) — desktop insets shipped; responsive is the Phase 4 task.
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
