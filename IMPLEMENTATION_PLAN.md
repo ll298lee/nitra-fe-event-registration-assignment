@@ -389,7 +389,7 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
       to filter full sessions (s2/s9), so the two pure logic modules ship together.
 - [x] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
       conflict; `ws1` vs `s10` (no) / `s11` (yes); one containment case (AC-C-*).
-- [ ] `feat(state)` `useRegistration` composable, provide/inject, survives free nav (D2).
+- [x] `feat(state)` `useRegistration` composable, provide/inject, survives free nav (D2).
 - [ ] `feat(shell)` wizard layout + free-navigation stepper (D13).
 - [ ] `docs(plan)` record state / timezone / stepper decisions.
 

@@ -253,3 +253,20 @@ hides conflicts); the confirmation number draws 8 uniform `[A-Z0-9]` chars.
 Deliberately did **not** re-validate in `conflicts` — keeping data honest is the
 edge's job (the normalize-at-the-edge invariant). New tests: `normalize.test.js` +
 a capacity partial-data case.
+
+## feat(state): useRegistration wizard store via provide/inject
+
+Single reactive wizard store (`createRegistration`) shared via provide/inject, not
+Pinia (**D2**): step/attendee/ticket/session/add-on selections + `goToStep`/`next`/
+`prev`.
+
+Critical decisions:
+
+- **No validation gate on navigation (D13)** — `goToStep` allows any step; the spec
+  defers all validation to the Step 4 submit, so free/non-linear movement is
+  intentional.
+- **Plain `createRegistration` factory + thin provide/inject wrappers** — the factory
+  is unit-testable without a component; `useRegistration` throws if no provider.
+
+Tests: AC-N-1 (free nav), AC-N-2 (state survives forward/back), AC-N-3 (single
+shared instance via provide/inject).
