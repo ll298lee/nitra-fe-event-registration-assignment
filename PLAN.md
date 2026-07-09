@@ -291,3 +291,14 @@ Critical decisions:
 
 Tests: `WizardStepper.spec.js` — AC-N-1 (clicking a future step emits `select`, no
 gate) + completed/current rendering.
+
+## docs: enforce pixel-perfect Figma parity in CLAUDE.md
+
+Review feedback on #7: the shell wasn't strictly matching Figma (wrong font sizes,
+a missing header divider). Strengthened the constitution to prevent recurrence —
+§1.3 now requires **measured** Figma values (every font size/weight/line-height,
+spacing, border, radius, color) mapped to the matching token, §2.5 makes
+pixel-perfect `agent-browser` comparison (via computed styles, not eyeballing) a
+blocking verify gate, §4 adds exact-measurement extraction + in-browser
+verification, and a new **"silent visual approximation"** anti-pattern bans
+rounding a measured value to a "close enough" token without recording it.
