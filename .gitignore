@@ -4,6 +4,12 @@ dist
 *.local
 .DS_Store
 
+# Claude Code skills (local tooling — installed skill contents stay local;
+# skills-lock.json is tracked so the skill set is reproducible)
+.agents/
+.claude/
+tmp.md
+
 # Yarn (Berry)
 .yarn/*
 !.yarn/patches
