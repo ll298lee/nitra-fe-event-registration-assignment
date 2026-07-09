@@ -33,6 +33,25 @@ export default [
     },
   },
 
+  {
+    // Vitest globals for test files (globals: true is set in vitest.config.mjs).
+    files: ['**/*.{test,spec}.js', 'test/**/*.js'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        suite: 'readonly',
+      },
+    },
+  },
+
   // Keep last: disables all ESLint formatting rules so Prettier owns formatting.
   prettier,
 ];
