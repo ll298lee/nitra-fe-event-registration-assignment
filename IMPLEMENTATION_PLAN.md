@@ -305,14 +305,17 @@ float drift, e.g. `149 * 0.1`) is unit-tested in
   conflict arises.
 - **AC-C-5** Given a detected conflict, When surfaced, Then attributed to Step 3 and names the
   conflicting session.
+- **AC-C-6** Given a non-timed add-on (meal/merch, no time slot), When conflict-checked against any
+  selected session, Then it never conflicts.
 
-| AC  | Test                                                              | Kind |
-| --- | ----------------------------------------------------------------- | ---- |
-| C-1 | `conflicts.test.js` → "intervalsOverlap strict vs touching"       | PF   |
-| C-2 | `conflicts.test.js` → "flags s4/s5, s11/s12; decoys s2/s3, s8/s9" | PF   |
-| C-3 | `conflicts.test.js` → "ws1 vs s10/s11/s12"                        | PF   |
-| C-4 | `conflicts.test.js` → "ws2 full: no live conflict"                | PF   |
-| C-5 | `conflicts.test.js` → "conflict message names session"            | PF   |
+| AC  | Test                                                                     | Kind |
+| --- | ------------------------------------------------------------------------ | ---- |
+| C-1 | `conflicts.test.js` → "intervalsOverlap strict vs touching"              | PF   |
+| C-2 | `conflicts.test.js` → "flags s4/s5, s11/s12; decoys s2/s3, s8/s9"        | PF   |
+| C-3 | `conflicts.test.js` → "ws1 vs s10/s11/s12"                               | PF   |
+| C-4 | `conflicts.test.js` → "ws2 full: no live conflict"                       | PF   |
+| C-5 | conflict **message** copy — deferred to the Step 3 conflict-UI PR (i18n) | SFC  |
+| C-6 | `conflicts.test.js` → "non-timed add-ons never conflict"                 | PF   |
 
 ### 5.9 Cross-cutting — Capacity
 
@@ -380,8 +383,10 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 
 - [x] `feat(data)` JSDoc typedefs + mock normalizers; **async facade** (D1). Parse ISO once at the edge.
 - [x] `feat(utils)` currency formatter (D5) + wall-clock date-range & day-key helpers (D4).
-- [ ] `feat(logic)` pure interval-overlap + conflict detection (D6) — derived from data, not the file.
-- [ ] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
+- [x] `feat(logic)` pure interval-overlap + conflict detection (D6) — derived from data, not the file.
+      **`capacity.js` (isFull/remainingSpots) landed here too** — the conflict decoy tests need it
+      to filter full sessions (s2/s9), so the two pure logic modules ship together.
+- [x] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
       conflict; `ws1` vs `s10` (no) / `s11` (yes); one containment case (AC-C-*).
 - [ ] `feat(state)` `useRegistration` composable, provide/inject, survives free nav (D2).
 - [ ] `feat(shell)` wizard layout + free-navigation stepper (D13).
@@ -470,6 +475,6 @@ Per-PR record of the human `review` gate — one row per merged PR (a PR is the 
 sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
 agent never self-approves.
 
-| PR    | Theme / branch | Reviewer | Status              |
-| ----- | -------------- | -------- | ------------------- |
-| _n/a_ | _(none yet)_   | _n/a_    | _awaiting first PR_ |
+| PR   | Theme / branch                                                                                                              | Reviewer  | Status                           |
+| ---- | --------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
+| #TBD | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests) | _pending_ | **Open — awaiting human review** |

@@ -278,3 +278,46 @@ adversarial verifier sub-agent re-derived every one of these values straight fro
 the raw mocks and confirmed the AM/PM separator is a plain ASCII space
 byte-for-byte, and that the whole suite passes under `TZ=Asia/Taipei` and
 `TZ=America/Los_Angeles`.
+
+## feat(logic): capacity + strict-overlap time-conflict detection
+
+The last of the pure logic, and the part the whole assessment is quietly
+engineered around: capacity and time conflicts. Both are derived from the _data_,
+not transcribed from the mock file's header comment — I recomputed every number
+independently and let the tests encode the result.
+
+`capacity.js` is small: `isFull` is `registered >= capacity` (the README's exact
+wording, so the equal case — `s2` 120/120, `s9` 90/90, `ws2` 25/25 — counts as
+full), and `remainingSpots` clamps at zero. Meals and merch carry no `capacity`
+field, so they're treated as uncapped (never full, no remaining number). It ships
+in this commit rather than its own because the conflict "decoy" test needs it:
+proving that `s2`/`s3` and `s8`/`s9` overlap but are _not_ live conflicts requires
+filtering out the full sessions first.
+
+`conflicts.js` is the heart. Overlap uses **strict** inequality —
+`aStart < bEnd && bStart < aEnd` (**D6**) — so slots that merely touch at an
+endpoint don't conflict. This matters because the data is built around the 14:00Z
+boundary: `s10` ends exactly as `s11` and `ws1` begin. A naive `<=` would wrongly
+flag that back-to-back pair. `detectConflicts` returns overlapping pairs;
+`conflictingSessions` answers "which selected sessions does this workshop clash
+with" (empty for non-timed meals/merch).
+
+### Judgment calls
+
+- **The conflict _message_ (AC-C-5) is deferred, not skipped.** Naming the
+  conflicting session in copy is UI/i18n work that belongs to the Step 3 commit
+  (behind `vue-i18n`, D14). This commit ships the detection _data_
+  (`conflictingSessions`) that copy will consume, and I marked C-5 accordingly in
+  the §5.8 map so it isn't mistaken for done.
+- **I added AC-C-6** to the map to cover the "meals/merch never conflict" guard
+  test — a real boundary the verifier flagged as otherwise untraced.
+
+### Verification
+
+`conflicts.test.js` covers **AC-C-1..C-4** and the new **AC-C-6**;
+`capacity.test.js` covers **AC-Cap-1/2/3** (and the session/addon-facing
+**AC-2.3/2.4, AC-3.2/3.5**). The adversarial workflow enumerated all
+strictly-overlapping session pairs by brute force and confirmed they are exactly
+`s2/s3, s4/s5, s8/s9, s11/s12`, reducing to `s4/s5, s11/s12` once the full
+sessions are filtered — and that `ws1` clashes with `s11`/`s12` but not the
+14:00Z-touching `s10`. No discrepancies.
