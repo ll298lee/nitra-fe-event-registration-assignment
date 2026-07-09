@@ -232,3 +232,49 @@ interfaces the constitution requires.
 `facade.test.js` asserts the fetchers resolve asynchronously to the normalized
 shape (parsed `Date`s, 12 sessions / 8 add-ons) — that is **AC-S-1** — plus the
 confirmation-number format and registration echo behind **AC-S-2**.
+
+## feat(utils): currency formatting + wall-clock datetime helpers
+
+The two pure "how do we render a number / a time" primitives, kept separate from
+the aggregation that composes them (the order summary is a later, reactive
+commit).
+
+`pricing.js` gives `formatCurrency` (via `Intl.NumberFormat` en-US/USD → the
+`$X,XXX.XX` shape, **D5**), the VIP workshop discount, and a small `round2` that
+keeps the money math exact. Two decisions worth calling out:
+
+- **`WORKSHOP_DISCOUNT_RATE = 0.10` is a named, derived constant (D11).** The mock
+  only carries the perk as the _display string_ `"10% off workshops"` — there is
+  no numeric rate in the data — so I derived the `0.10` and named it rather than
+  letting it read as a magic number. The discount is gated to the VIP ticket and,
+  by construction, can only ever be applied over workshop prices (the function
+  accepts nothing else), which is what makes "meals/merch/ticket never discounted"
+  true by design.
+- **`round2` exists on purpose.** `149 * 0.1` is `14.900000000000002` in IEEE
+  floats; rounding to whole cents makes the discount land on `$14.90` / net
+  `$134.10` instead of a hair off.
+
+`datetime.js` is where the **wall-clock timezone policy (D4)** lives, and it is
+the most deliberate call in this commit. The mock timestamps are all `Z`/UTC, but
+they _mean_ the event's wall-clock time — `2028-11-15T09:00:00Z` is the 9 AM
+session, not "09:00 UTC, shown in your zone." So I **read the `Date`'s UTC fields
+and format the string by hand** instead of using `Intl.DateTimeFormat` with a
+local time zone. Two reasons:
+
+1. It never shifts by the viewer's offset. `ws2` (18:30Z) has to stay on Nov 15;
+   a naive +8 (Taipei) render would push it to 02:30 the _next_ day and sort it
+   onto the wrong day heading.
+2. It's deterministic across environments. `Intl` with `hour12` also emits a
+   **narrow no-break space (U+202F)** before AM/PM on modern ICU, which silently
+   breaks an exact string match; building the string by hand sidesteps that trap
+   entirely.
+
+### Verification
+
+`pricing.test.js` covers **AC-1.4** and **AC-P-1/P-2/P-5** (plus the pure part of
+P-3/P-4). `datetime.test.js` covers **AC-2.1 / AC-2.5** and **AC-T-1/T-2/T-3**,
+including the noon/midnight 12-hour edges and the ws2 "stays on Nov 15" case. An
+adversarial verifier sub-agent re-derived every one of these values straight from
+the raw mocks and confirmed the AM/PM separator is a plain ASCII space
+byte-for-byte, and that the whole suite passes under `TZ=Asia/Taipei` and
+`TZ=America/Los_Angeles`.

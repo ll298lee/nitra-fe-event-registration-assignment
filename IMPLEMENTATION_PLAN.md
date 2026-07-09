@@ -289,6 +289,10 @@ Rate = **0.10** (derived constant, D11). Discount applies to **workshops only**.
 | P-6 | `useOrderSummary.test.js` → "ticket switch recomputes 733.10 → 448.00" | PF   |
 | P-7 | `useOrderSummary.test.js` → "full-cart VIP 848.10 / General 563.00"    | PF   |
 
+_Supporting primitive:_ `round2` (cents rounding that keeps P-1/P-2 exact against binary
+float drift, e.g. `149 * 0.1`) is unit-tested in
+`pricing.test.js → "round2 rounds binary-float drift to whole cents"`.
+
 ### 5.8 Cross-cutting — Conflict detection
 
 - **AC-C-1** Given `intervalsOverlap`, When intervals strictly overlap, Then true; touching endpoints
@@ -375,7 +379,7 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 ### Phase 2 — Foundation
 
 - [x] `feat(data)` JSDoc typedefs + mock normalizers; **async facade** (D1). Parse ISO once at the edge.
-- [ ] `feat(utils)` currency formatter (D5) + wall-clock date-range & day-key helpers (D4).
+- [x] `feat(utils)` currency formatter (D5) + wall-clock date-range & day-key helpers (D4).
 - [ ] `feat(logic)` pure interval-overlap + conflict detection (D6) — derived from data, not the file.
 - [ ] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
       conflict; `ws1` vs `s10` (no) / `s11` (yes); one containment case (AC-C-*).
