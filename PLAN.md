@@ -5,8 +5,19 @@
 I'm running this as a spec-driven build. `README.md` is the immutable functional
 spec (what to build — fields, validation, pricing, capacity, time-conflict
 logic), the Figma page is the visual spec, and `CLAUDE.md` is the guardrail that
-keeps both AI and me honest (plain JavaScript, design tokens only, spec →
-plan → tasks → implement → verify).
+keeps both AI and me honest (plain JavaScript, design tokens only, specify →
+plan → tasks → implement → verify → review). Each arrow is a blocking gate: I
+don't cross it until the previous one is satisfied, so every line of code traces
+back to a rule in the spec rather than to vibes.
+
+The final gate is **review, done through GitHub**. No change counts as done until
+it's on a branch, opened as a pull request, and approved + merged by a human (me)
+— never committed straight to `main`. Review is per commit, and every PR uses a
+template (`.github/pull_request_template.md`) that forces the agent to spell out
+its judgment calls, traps, and open questions, so review time lands where it
+matters. The agent opens the PR and then hands off: it can't approve or merge its
+own work, and it confirms the outcome by pulling PR state with the `gh` CLI
+rather than assuming.
 
 I work in small conventional commits, and this document is deliberately
 organized to mirror that commit history — each `##` section below maps to one
