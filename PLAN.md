@@ -200,159 +200,56 @@ and the §9 review log (now per-PR) to match.
 
 ## feat(data): async facade over mocks + JSDoc-typed normalizers
 
-First code of the wizard, and deliberately the least glamorous part: the data
-edge. This is the opening commit of the "pure business-logic foundation" PR —
-logic and its tests, no UI and no reactivity yet, so the numeric acceptance
-criteria go green independently of any component.
-
-The mocks are plain synchronous arrays, but loading and pending states are part
-of the spec (the Step 2 session list, the Step 4 submit). So rather than import
-the arrays directly, everything goes through a thin **async facade**
-(`src/data/facade.js`) — `fetchEvent` / `fetchSessions` / `fetchAddons` /
-`submitRegistration`, each resolving after a small simulated latency. That makes
-real loading affordances possible, and swapping the bodies for `fetch()` later
-changes nothing downstream. This is decision **D1**.
-
-`src/data/normalize.js` parses each ISO timestamp (`2028-11-15T09:00:00Z`) into a
-`Date` **once, here at the edge**, exposing `start` / `end` so nothing further in
-the app ever re-parses a raw string. The JSDoc `@typedef`s for `Session`
-and `Addon` document the shapes — the plain-JS alternative to TypeScript
-interfaces the constitution requires.
-
-### AI follow-up questions
-
-- **Where should the confirmation number come from?** I put
-  `generateConfirmationNumber` (`WDS-XXXXXXXX`) in the facade: it's the
-  "server" assigning it on submit, not view logic. The success-screen wiring
-  (AC-S-2 proper) is a later Step 4 commit; this just delivers and tests the
-  primitive so the format is nailed down early.
-
-### Verification
-
-`facade.test.js` asserts the fetchers resolve asynchronously to the normalized
-shape (parsed `Date`s, 12 sessions / 8 add-ons) — that is **AC-S-1** — plus the
-confirmation-number format and registration echo behind **AC-S-2**.
+Async facade (`fetchEvent`/`fetchSessions`/`fetchAddons`/`submitRegistration`)
+over the sync mocks so loading/pending states are real and swapping in `fetch()`
+later changes nothing downstream (**D1**). `normalize.js` parses ISO timestamps
+into `Date` `start`/`end` once at the edge, with JSDoc `@typedef`s for the shapes;
+`generateConfirmationNumber` (`WDS-XXXXXXXX`) lives here as the "server"-assigned
+id. Tests: `facade.test.js` → AC-S-1 (async + normalized shape) and the AC-S-2
+confirmation-number primitive.
 
 ## feat(utils): currency formatting + wall-clock datetime helpers
 
-The two pure "how do we render a number / a time" primitives, kept separate from
-the aggregation that composes them (the order summary is a later, reactive
-commit).
+Pure rendering primitives (aggregation stays in the later order-summary commit).
+`pricing.js`: `formatCurrency` (Intl en-US/USD, **D5**), `round2`, VIP discount.
+`datetime.js`: wall-clock time/day helpers (**D4**).
 
-`pricing.js` gives `formatCurrency` (via `Intl.NumberFormat` en-US/USD → the
-`$X,XXX.XX` shape, **D5**), the VIP workshop discount, and a small `round2` that
-keeps the money math exact. Two decisions worth calling out:
+Critical decisions:
 
-- **`WORKSHOP_DISCOUNT_RATE = 0.10` is a named, derived constant (D11).** The mock
-  only carries the perk as the _display string_ `"10% off workshops"` — there is
-  no numeric rate in the data — so I derived the `0.10` and named it rather than
-  letting it read as a magic number. The discount is gated to the VIP ticket and,
-  by construction, can only ever be applied over workshop prices (the function
-  accepts nothing else), which is what makes "meals/merch/ticket never discounted"
-  true by design.
-- **`round2` exists on purpose.** `149 * 0.1` is `14.900000000000002` in IEEE
-  floats; rounding to whole cents makes the discount land on `$14.90` / net
-  `$134.10` instead of a hair off.
+- **`WORKSHOP_DISCOUNT_RATE = 0.10` (D11)** — derived and named; the mock only has
+  the string "10% off workshops". Discount is VIP-only and, by construction,
+  workshop-only.
+- **Wall-clock via manual UTC formatting, not `Intl.DateTimeFormat` (D4)** — keeps
+  `ws2` (18:30Z) on Nov 15 regardless of viewer offset, and avoids Intl's U+202F
+  space before AM/PM that breaks exact string matches.
 
-`datetime.js` is where the **wall-clock timezone policy (D4)** lives, and it is
-the most deliberate call in this commit. The mock timestamps are all `Z`/UTC, but
-they _mean_ the event's wall-clock time — `2028-11-15T09:00:00Z` is the 9 AM
-session, not "09:00 UTC, shown in your zone." So I **read the `Date`'s UTC fields
-and format the string by hand** instead of using `Intl.DateTimeFormat` with a
-local time zone. Two reasons:
-
-1. It never shifts by the viewer's offset. `ws2` (18:30Z) has to stay on Nov 15;
-   a naive +8 (Taipei) render would push it to 02:30 the _next_ day and sort it
-   onto the wrong day heading.
-2. It's deterministic across environments. `Intl` with `hour12` also emits a
-   **narrow no-break space (U+202F)** before AM/PM on modern ICU, which silently
-   breaks an exact string match; building the string by hand sidesteps that trap
-   entirely.
-
-### Verification
-
-`pricing.test.js` covers **AC-1.4** and **AC-P-1/P-2/P-5** (plus the pure part of
-P-3/P-4). `datetime.test.js` covers **AC-2.1 / AC-2.5** and **AC-T-1/T-2/T-3**,
-including the noon/midnight 12-hour edges and the ws2 "stays on Nov 15" case. An
-adversarial verifier sub-agent re-derived every one of these values straight from
-the raw mocks and confirmed the AM/PM separator is a plain ASCII space
-byte-for-byte, and that the whole suite passes under `TZ=Asia/Taipei` and
-`TZ=America/Los_Angeles`.
+Tests cover AC-1.4, AC-P-1/2/5 and AC-2.1/2.5, AC-T-1/2/3.
 
 ## feat(logic): capacity + strict-overlap time-conflict detection
 
-The last of the pure logic, and the part the whole assessment is quietly
-engineered around: capacity and time conflicts. Both are derived from the _data_,
-not transcribed from the mock file's header comment — I recomputed every number
-independently and let the tests encode the result.
+`capacity.js`: `isFull` = `registered >= capacity`, `remainingSpots` clamped;
+meals/merch uncapped. `conflicts.js`: `detectConflicts` + `conflictingSessions`.
 
-`capacity.js` is small: `isFull` is `registered >= capacity` (the README's exact
-wording, so the equal case — `s2` 120/120, `s9` 90/90, `ws2` 25/25 — counts as
-full), and `remainingSpots` clamps at zero. Meals and merch carry no `capacity`
-field, so they're treated as uncapped (never full, no remaining number). It ships
-in this commit rather than its own because the conflict "decoy" test needs it:
-proving that `s2`/`s3` and `s8`/`s9` overlap but are _not_ live conflicts requires
-filtering out the full sessions first.
+Critical decisions:
 
-`conflicts.js` is the heart. Overlap uses **strict** inequality —
-`aStart < bEnd && bStart < aEnd` (**D6**) — so slots that merely touch at an
-endpoint don't conflict. This matters because the data is built around the 14:00Z
-boundary: `s10` ends exactly as `s11` and `ws1` begin. A naive `<=` would wrongly
-flag that back-to-back pair. `detectConflicts` returns overlapping pairs;
-`conflictingSessions` answers "which selected sessions does this workshop clash
-with" (empty for non-timed meals/merch).
+- **Strict-inequality overlap (D6)** — touching endpoints don't conflict, so the
+  14:00Z back-to-back slots (`s10`→`s11`/`ws1`) stay co-selectable.
+- **Capacity ships with conflicts** — the decoy test needs `isFull` to filter the
+  full sessions (`s2`/`s9`) before asserting live conflicts.
+- **Conflict message (AC-C-5) deferred** to the Step 3 i18n commit; this ships the
+  detection data. **Added AC-C-6** for the meals/merch guard.
 
-### Judgment calls
-
-- **The conflict _message_ (AC-C-5) is deferred, not skipped.** Naming the
-  conflicting session in copy is UI/i18n work that belongs to the Step 3 commit
-  (behind `vue-i18n`, D14). This commit ships the detection _data_
-  (`conflictingSessions`) that copy will consume, and I marked C-5 accordingly in
-  the §5.8 map so it isn't mistaken for done.
-- **I added AC-C-6** to the map to cover the "meals/merch never conflict" guard
-  test — a real boundary the verifier flagged as otherwise untraced.
-
-### Verification
-
-`conflicts.test.js` covers **AC-C-1..C-4** and the new **AC-C-6**;
-`capacity.test.js` covers **AC-Cap-1/2/3** (and the session/addon-facing
-**AC-2.3/2.4, AC-3.2/3.5**). The adversarial workflow enumerated all
-strictly-overlapping session pairs by brute force and confirmed they are exactly
-`s2/s3, s4/s5, s8/s9, s11/s12`, reducing to `s4/s5, s11/s12` once the full
-sessions are filtered — and that `ws1` clashes with `s11`/`s12` but not the
-14:00Z-touching `s10`. No discrepancies.
+Tests cover AC-C-1..C-4/C-6 and AC-Cap-1/2/3; numbers re-derived from the mocks by
+an adversarial workflow.
 
 ## fix(data): harden the data edge against partial payloads (code-review prep)
 
-Before opening the PR I ran the `/code-review` skill over the branch as prep (not
-the review gate itself — that's still a human). It surfaced no confirmed bugs, but
-four "plausible" latent gaps, all of the same shape: safe against the frozen
-mocks, but a hazard the moment the D1 facade is swapped for a real `fetch` and a
-partial or malformed payload flows through. Since the whole point of that seam is
-to face a real API, I hardened it (decision **D17**):
-
-- **`capacity` treats a missing `registered` as 0.** Previously a capped item with
-  no `registered` made `isFull` return `false` while `remainingSpots` returned
-  `NaN` — two predicates disagreeing on the same item. Now they agree
-  (not-full / full-remaining).
-- **`normalizeAddon` attaches a time slot only when both `date` and `endDate`
-  exist.** A lone `date` used to produce an `Invalid Date` `end`, which is truthy
-  (so it slips past the `!addon.end` guard) and makes every overlap comparison
-  silently `false` — a workshop that hides its own conflicts. An incomplete slot
-  is now simply not attached.
-- **The confirmation number draws 8 uniform `[A-Z0-9]` characters** instead of
-  `base36(random).slice(2,10).padEnd(8,'0')`, which biased short fractions toward
-  a `0`-heavy suffix and quietly cut uniqueness.
-
-I deliberately did **not** add guards to `detectConflicts` / `conflictingSessions`
-for un-normalized sessions. That would duplicate the "parse once at the edge"
-invariant the whole `normalize` layer exists to uphold; the right place to keep
-data honest is the edge, and downstream logic trusts the parsed `start`/`end`.
-That trade-off is the second half of D17.
-
-### Verification
-
-New tests: `normalize.test.js` (timed vs non-timed add-ons, and the incomplete-slot
-guard) and a `capacity.test.js` case for the missing-`registered` consistency. The
-existing confirmation-number format test still passes. Full suite green:
-`yarn check` + `yarn test:unit:ci`.
+The `/code-review` prep pass found no confirmed bugs but four plausible latent
+gaps at the D1 seam (safe vs the mocks, risky once swapped for a real `fetch`).
+Hardened per **D17**: missing `registered` reads as 0 (keeps `isFull`/
+`remainingSpots` consistent instead of `false`/`NaN`); an add-on time slot is
+attached only when both `date` and `endDate` exist (no truthy `Invalid Date` that
+hides conflicts); the confirmation number draws 8 uniform `[A-Z0-9]` chars.
+Deliberately did **not** re-validate in `conflicts` — keeping data honest is the
+edge's job (the normalize-at-the-edge invariant). New tests: `normalize.test.js` +
+a capacity partial-data case.
