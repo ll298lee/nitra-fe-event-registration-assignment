@@ -253,3 +253,79 @@ hides conflicts); the confirmation number draws 8 uniform `[A-Z0-9]` chars.
 Deliberately did **not** re-validate in `conflicts` — keeping data honest is the
 edge's job (the normalize-at-the-edge invariant). New tests: `normalize.test.js` +
 a capacity partial-data case.
+
+## feat(state): useRegistration wizard store via provide/inject
+
+Single reactive wizard store (`createRegistration`) shared via provide/inject, not
+Pinia (**D2**): step/attendee/ticket/session/add-on selections + `goToStep`/`next`/
+`prev`.
+
+Critical decisions:
+
+- **No validation gate on navigation (D13)** — `goToStep` allows any step; the spec
+  defers all validation to the Step 4 submit, so free/non-linear movement is
+  intentional.
+- **Plain `createRegistration` factory + thin provide/inject wrappers** — the factory
+  is unit-testable without a component; `useRegistration` throws if no provider.
+
+Tests: AC-N-1 (free nav), AC-N-2 (state survives forward/back), AC-N-3 (single
+shared instance via provide/inject).
+
+## feat(shell): free-navigation wizard stepper + shell layout
+
+The wizard skeleton, built from Figma (Step 1 `1069:968` / Step 4 `1074:897` via
+`figma-mcp-free`): a `WizardStepper` component + the `IndexPage` shell (header with
+dynamic event name → stepper → step-title + placeholder content → footer action
+bar), all token-styled, no hex. Step forms land in later PRs.
+
+Critical decisions:
+
+- **Custom token stepper, clickable for free nav (D13 confirmed)** — hand-built (not
+  Quasar's Material `QStepper`); teal current/completed circles with a check glyph on
+  completed, gray upcoming. Figma doesn't show step-click, but D13 mandates non-gated
+  navigation, so steps are clickable.
+- **Event name is fetched from the facade, not hardcoded** — matches the "dynamic from
+  state" note (§4); the Figma "2025" title is a placeholder.
+- **Verified visually** against Figma via `agent-browser` at 1440px (header, stepper
+  states, footer) — parity confirmed.
+
+Tests: `WizardStepper.spec.js` — AC-N-1 (clicking a future step emits `select`, no
+gate) + completed/current rendering.
+
+## docs: enforce pixel-perfect Figma parity in CLAUDE.md
+
+Review feedback on #7: the shell wasn't strictly matching Figma (wrong font sizes,
+a missing header divider). Strengthened the constitution to prevent recurrence —
+§1.3 now requires **measured** Figma values (every font size/weight/line-height,
+spacing, border, radius, color) mapped to the matching token, §2.5 makes
+pixel-perfect `agent-browser` comparison (via computed styles, not eyeballing) a
+blocking verify gate, §4 adds exact-measurement extraction + in-browser
+verification, and a new **"silent visual approximation"** anti-pattern bans
+rounding a measured value to a "close enough" token without recording it.
+
+## fix(shell): match Figma exactly — fonts, dividers, button sizing
+
+Re-measured Step 1 / Step 4 in Figma and corrected the shell to the exact values,
+verified in-browser with `getComputedStyle`:
+
+- **Header bottom divider now renders** (the reported bug) — it was
+  `border-neutral-muted` with no explicit border-style, so `border-b` produced no
+  visible line. Now `divider-default` (`rgba(0,0,0,0.1)`) 1px `border-solid`, on the
+  header, stepper, and footer.
+- **Fonts corrected to Figma:** event title `text-subtitle1`(16) → **`text-h4`(20)**;
+  step title `text-h2`(28) → **`text-h3`(24)**; stepper label per-state weights +
+  `text-neutral-quiet` upcoming; buttons `text-subtitle2`/`text-subtitle1` (14/16).
+- **Exact insets** (header 48px / body 120px) and **exact button sizing** (40/48px
+  height, 10/12px radius); todo connector `bg-surface-l2` per Figma.
+
+Discrepancies recorded in §4 (no silent rounding): stepper label 13px → `text-md`(14,
+nearest); Figma weights 680/600/500/400 → nearest token weights; 10px radius →
+`rounded-[10px]`; native `<button>` over `QBtn` for exact sizing.
+
+## fix(shell): remove invented footer-button icons
+
+Follow-up to PR #7 review: the footer buttons had no chevron/arrow icons in Figma,
+but I had added leading/trailing chevrons (an extraction artifact I wrongly
+"interpreted" into a direction). Removed them — Next/Back/Submit are now text-only,
+matching Figma. Verified in-browser: 0 icons in every footer button. (The completed-
+step **check** glyphs in the stepper stay — those are in Figma.)

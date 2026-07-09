@@ -26,8 +26,14 @@ against those sources.
    official doc), never by hand-editing `README.md`. A revised spec _replaces_ `README.md`
    wholesale from the source; the agent never patches it. Scope changes follow the §2
    "Scope changes" procedure.
-3. **The Figma page is the source of visual truth.** All UI must match it (see §4). The
-   canonical file is:
+3. **The Figma page is the source of visual truth — match it pixel-perfectly.** All UI must
+   reproduce the target frame exactly: **every font size, weight, and line-height; every
+   height, padding, gap, and margin; every border, radius, and color** comes from the frame's
+   **measured** values (extracted from Figma, then mapped to the matching token per §1.4/§4),
+   never eyeballed or rounded to "close enough." Where the design system genuinely lacks an
+   exact token for a measured value, **record the discrepancy in `IMPLEMENTATION_PLAN.md` and
+   resolve it deliberately** (§4) — do not silently approximate. Pixel parity is a blocking
+   verify-gate check via `agent-browser` against the frame (§2.5). The canonical file is:
    `https://www.figma.com/design/6Jl8Jyv7bETcHg2carNi6d/Nitra-FE-Assessment—v2`
 4. **Design tokens only — never hardcode hex.** Use the UnoCSS semantic shortcuts/tokens
    defined in `src/unocss/semantic.js` and `src/unocss/index.js` (e.g. `text-neutral`,
@@ -62,8 +68,12 @@ frame in Figma.
    Consult the skills in §3. Prefer revising the spec-plan and regenerating over patching
    around a design that drifted.
 5. **Verify** — _gate: automated checks green._ Business-logic Vitest tests (each tracing
-   to an acceptance criterion), visual parity vs Figma via `agent-browser`, and
-   `yarn check && yarn test:unit` green.
+   to an acceptance criterion) and `yarn check && yarn test:unit` green, **plus pixel-perfect
+   visual parity vs Figma** via `agent-browser`: run the app, screenshot the built UI at the
+   frame's width, and compare **measured** values — font sizes/weights/line-heights, spacing,
+   borders, radii, colors — element-by-element against the Figma frame (§1.3, §4). Eyeballing
+   "looks about right" is not verification; every deviation is either fixed or recorded as a
+   deliberate discrepancy in `IMPLEMENTATION_PLAN.md`.
 6. **Review (human)** — _gate: definition of done._ Every change is reviewed by a human on
    GitHub before it counts as done. **The unit of review is the PR** — size it to roughly
    **20 minutes of review for a senior engineer**: one coherent, single-theme change a
@@ -116,6 +126,10 @@ frame in Figma.
 - **Committing feature work directly to `main`** — bypassing the branch + PR review gate.
 - **Silent judgment calls** — landing a spec-gap fill, deviation, or assumption without
   calling it out in the PR (see §2 step 6).
+- **Silent visual approximation** — eyeballing UI or rounding a **measured** Figma value
+  (font size, weight, line-height, spacing, border, radius, color) to a "close enough" token
+  without recording it. Match the frame's measured values; where no exact token exists,
+  record the discrepancy in `IMPLEMENTATION_PLAN.md` and resolve it deliberately (§1.3, §4).
 
 **Scope changes (spec expansion).** When new requirements or new Figma frames arrive, the
 spec is _growing_, not being corrected — a governed event, not scope creep. Handle it in
@@ -166,9 +180,19 @@ accepts the `figmaUrl` above **or** a `fileId`.
    plan the Vue component tree and map Figma components to Quasar components.
 4. **`generate_code { framework: 'vue', figmaUrl + nodeId }`** — _reference only._ Never
    ship generated markup as-is: rewrite it to **Quasar components + UnoCSS token classes**,
-   in plain JS.
-5. **Verify visually** — use `agent-browser` to run the app (`yarn dev`, `:9001`) and
-   compare the rendered component against the Figma frame; iterate until it matches.
+   in plain JS. **Extract the exact measured values** from the frame — every font
+   size/weight/line-height, height, padding, gap, border width+color, radius, and fill — and
+   map each to the token whose value matches (per the token px in `src/css/typography.scss`
+   and the palette in `src/unocss/colors.js`). Any measured value with **no exact token** is a
+   discrepancy: record it in `IMPLEMENTATION_PLAN.md` §4 and resolve it deliberately (never
+   silently round to a near token). _`list_frames`/`get_file` return multi-MB output — run
+   Figma inspection inside a subagent that returns a concise token-mapped spec._
+5. **Verify pixel-perfect** — use `agent-browser` to run the app (`yarn dev`; the port may
+   drift to `:9001`/`:9002` — confirm the URL) and compare the rendered component against the
+   Figma frame at the frame's width. Compare **measured** values element-by-element (computed
+   font size, spacing, border, radius, color — e.g. via `agent-browser eval` of
+   `getComputedStyle`), not just a glance; iterate until every measured value matches or is a
+   recorded discrepancy.
 
 _New frames (scope growth):_ any newly-introduced frame must be **cataloged in
 `IMPLEMENTATION_PLAN.md` §4 (name + nodeId) and have its tokens reconciled against
