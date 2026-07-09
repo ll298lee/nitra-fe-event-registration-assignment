@@ -33,16 +33,17 @@ against those sources.
    (This is distinct from the submission `PLAN.md` referenced by `README.md` §Submission —
    do not conflate the two.)
 6. **Gates are green before "done."** `yarn check` (ESLint + Prettier) and `yarn test:unit`
-   must pass, and the UI must match Figma, before any change is considered complete.
+   must pass, and the UI must match Figma, **and the commit's PR must be human-approved and
+   merged** (see §2 step 6), before any change is considered complete.
 
 ---
 
 ## 2. Spec-driven workflow (mandatory — these are blocking gates)
 
-Work proceeds **specify → plan → tasks → implement → verify**. Each arrow is a gate: do
-not cross it until the prior step is satisfied. The spec is the source of truth and code
-is its projection — every line of code traces back to a rule in `README.md` and a frame in
-Figma.
+Work proceeds **specify → plan → tasks → implement → verify → review**. Each arrow is a
+gate: do not cross it until the prior step is satisfied. The spec is the source of truth
+and code is its projection — every line of code traces back to a rule in `README.md` and a
+frame in Figma.
 
 1. **Specify.** Before touching code for a step, re-read the relevant `README.md` section
    **and** open the matching Figma frame (§4). Restate the behavior as testable acceptance
@@ -56,9 +57,40 @@ Figma.
 4. **Implement.** Write code to satisfy the acceptance criteria — not "what looks good."
    Consult the skills in §3. Prefer revising the spec-plan and regenerating over patching
    around a design that drifted.
-5. **Verify** — _gate: definition of done._ Business-logic Vitest tests (each tracing to
-   an acceptance criterion), visual parity vs Figma via `agent-browser`, and
+5. **Verify** — _gate: automated checks green._ Business-logic Vitest tests (each tracing
+   to an acceptance criterion), visual parity vs Figma via `agent-browser`, and
    `yarn check && yarn test:unit` green.
+6. **Review (human)** — _gate: definition of done._ Every change is reviewed by a human on
+   GitHub before it counts as done. Review is **per commit**: keep commits small and
+   atomic (each already names its spec area — §5).
+   - Work lives on a **branch**, never committed directly to `main`.
+   - Open a PR against `main` with `gh pr create` (prefer one logical commit per PR). The
+     description links the `README.md` rule(s) and Figma frame(s) implemented, the
+     acceptance-criteria→test map from `IMPLEMENTATION_PLAN.md`, and an AI-usage note.
+   - The PR **must surface the agent's own judgment** so the reviewer knows where to look
+     hardest: **traps/gotchas** hit, **judgment calls and decisions** made (esp. spec-gap
+     fills and deviations — cross-reference the `IMPLEMENTATION_PLAN.md` decision log
+     `D#`), and **open questions / assumptions** it could not resolve from `README.md` or
+     Figma. Silent judgment calls buried in the diff are exactly what this gate exists to
+     catch. (The `.github/pull_request_template.md` checklist enforces this.)
+   - As prep — **not** the gate itself — run the `/code-review` skill on the diff first to
+     catch issues before a human looks.
+   - **The agent MUST stop here and hand off. It may not approve or merge its own PR.**
+     The **human approves and merges**; merging is never the agent's job.
+   - A commit is done only after a human approves it on GitHub (commit-by-commit when a PR
+     carries several) and it is merged.
+   - **How the agent confirms approval & ingests feedback.** The agent has no background
+     listener — it never gets pushed a notification. On its **next turn** it must _pull_
+     the PR state, and never trust its own memory of it:
+     - **Approval / merge:** `gh pr view <n> --json state,mergedAt,reviewDecision`
+       (cross-check with `git fetch origin && git log origin/main`). Not merged → not done;
+       the agent stops and waits. Enforcement here is honor-system (no branch protection) —
+       the agent simply must not self-merge.
+     - **Changes requested:** review comments live in GitHub's API, **not in git**, so
+       `git fetch` cannot see them. Read them with `gh pr view <n> --comments` /
+       `gh api repos/{owner}/{repo}/pulls/<n>/reviews` (+ `/comments`), address each thread,
+       then push new commits to the **same branch** (the PR auto-updates) for re-review.
+       Repeat until the human approves and merges.
 
 **Anti-patterns — do not do these:**
 
@@ -69,19 +101,25 @@ Figma.
   test, rewrite it.
 - **Retrofitted docs** — writing code first and back-filling the plan to match.
 - **Tests as decoration** — tests that don't map to a stated acceptance criterion.
+- **Self-approval / self-merge** — the agent approving or merging its own PR. The review
+  gate requires a human.
+- **Committing feature work directly to `main`** — bypassing the branch + PR review gate.
+- **Silent judgment calls** — landing a spec-gap fill, deviation, or assumption without
+  calling it out in the PR (see §2 step 6).
 
 ---
 
 ## 3. Which skill to use in which phase (installed this session)
 
-| Phase                 | Skill / MCP                         | Use it for                                                           |
-| --------------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| Specify (visual)      | **`figma-mcp-free`** MCP            | Read the Figma design → frames, tokens, structure (§4).              |
-| Implement (framework) | **`quasar-skilld`**                 | Correct Quasar 2 component APIs (QInput, QStepper, QCard, …).        |
-| Implement (Vue)       | **`vue`**, **`vue-best-practices`** | Composition API `<script setup>`, props/emits, composables — in JS.  |
-| Implement (styling)   | **`unocss`**                        | Utility/shortcut usage that reuses the existing semantic tokens.     |
-| Verify (tests)        | **`vue-testing-best-practices`**    | Vitest + Vue Test Utils patterns for business-logic and SFC tests.   |
-| Verify (visual/E2E)   | **`agent-browser`**                 | Drive the running app on `:9001`, screenshot, compare against Figma. |
+| Phase                 | Skill / MCP                         | Use it for                                                               |
+| --------------------- | ----------------------------------- | ------------------------------------------------------------------------ |
+| Specify (visual)      | **`figma-mcp-free`** MCP            | Read the Figma design → frames, tokens, structure (§4).                  |
+| Implement (framework) | **`quasar-skilld`**                 | Correct Quasar 2 component APIs (QInput, QStepper, QCard, …).            |
+| Implement (Vue)       | **`vue`**, **`vue-best-practices`** | Composition API `<script setup>`, props/emits, composables — in JS.      |
+| Implement (styling)   | **`unocss`**                        | Utility/shortcut usage that reuses the existing semantic tokens.         |
+| Verify (tests)        | **`vue-testing-best-practices`**    | Vitest + Vue Test Utils patterns for business-logic and SFC tests.       |
+| Verify (visual/E2E)   | **`agent-browser`**                 | Drive the running app on `:9001`, screenshot, compare against Figma.     |
+| Review (human)        | **`/code-review`** + `gh` CLI       | Self-review the diff, then open the PR and hand off for approval (§2.6). |
 
 The `vue*`/`unocss` skills show TypeScript — translate every example to plain JS (§1.1).
 
@@ -127,4 +165,9 @@ for it only if `figma-mcp-free` is insufficient.
 - **Commands:** `yarn dev` (→ `:9001`, auto-opens) · `yarn build` · `yarn check`
   (ESLint + Prettier) · `yarn fix` · `yarn test:unit` (watch) · `yarn test:unit:ci` (once).
 - **Commits:** conventional commits (repo uses `feat:` / `chore:` / `style:`); name the
-  spec area (e.g. `feat: step 3 add-ons running total`).
+  spec area (e.g. `feat: step 3 add-ons running total`). Keep commits **small and atomic** —
+  each commit is the unit of human review (§2.6).
+- **Branches & PRs:** never commit feature work to `main`. Branch per change
+  (e.g. `feat/step-1-attendee-info`), open a PR against `main` via `gh pr create` (the
+  `.github/pull_request_template.md` checklist is auto-loaded), and hand off for human
+  approval — the agent never self-approves or self-merges.
