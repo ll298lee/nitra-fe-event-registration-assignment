@@ -21,7 +21,11 @@ against those sources.
 2. **`README.md` is the immutable functional spec.** It is the source of truth for _what_
    to build (fields, validation rules, pricing, capacity, time-conflict logic). Treat it
    as **read-only — never edit `README.md`.** If it seems wrong or ambiguous, raise it;
-   don't "fix" it or silently diverge.
+   don't "fix" it or silently diverge. **Scope can still grow** — but only via **dated,
+   append-only addenda authored from an authoritative source** (assessor / product owner /
+   official doc), never by hand-editing `README.md`. A revised spec _replaces_ `README.md`
+   wholesale from the source; the agent never patches it. Scope changes follow the §2
+   "Scope changes" procedure.
 3. **The Figma page is the source of visual truth.** All UI must match it (see §4). The
    canonical file is:
    `https://www.figma.com/design/6Jl8Jyv7bETcHg2carNi6d/Nitra-FE-Assessment—v2`
@@ -108,6 +112,21 @@ frame in Figma.
 - **Silent judgment calls** — landing a spec-gap fill, deviation, or assumption without
   calling it out in the PR (see §2 step 6).
 
+**Scope changes (spec expansion).** When new requirements or new Figma frames arrive, the
+spec is _growing_, not being corrected — a governed event, not scope creep. Handle it in
+this order (blocking, like the main flow):
+
+1. **Classify.** Authoritative change (assessor / product owner / official doc) vs. an
+   idea. An idea is scope creep — raise it, don't fold it in.
+2. **Raise / confirm** before absorbing it (per §1.2 — raise, don't silently diverge).
+3. **Capture as a dated, append-only addendum** (a `SPEC_ADDENDUM.md`, created only when
+   the first real change lands). **Never edit `README.md`** — keep the original given
+   pristine and the delta auditable.
+4. **Register new Figma frames** in `IMPLEMENTATION_PLAN.md` §4 (name + nodeId) and
+   reconcile their tokens (§4 below) **before** implementing.
+5. **Run the normal flow** on the addendum as spec-of-record: specify → plan → tasks →
+   implement → verify → review.
+
 ---
 
 ## 3. Which skill to use in which phase (installed this session)
@@ -145,6 +164,11 @@ accepts the `figmaUrl` above **or** a `fileId`.
    in plain JS.
 5. **Verify visually** — use `agent-browser` to run the app (`yarn dev`, `:9001`) and
    compare the rendered component against the Figma frame; iterate until it matches.
+
+_New frames (scope growth):_ any newly-introduced frame must be **cataloged in
+`IMPLEMENTATION_PLAN.md` §4 (name + nodeId) and have its tokens reconciled against
+`src/unocss/semantic.js` before implementation** — same rule as §1.4, no silent hex. This
+is step 4 of the §2 "Scope changes" procedure.
 
 _Fallback:_ the official `claude.ai Figma` MCP (`get_screenshot`, `get_design_context`,
 `get_variable_defs`) gives richer context but needs Dev Mode access we don't have — reach

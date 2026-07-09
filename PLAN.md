@@ -19,6 +19,15 @@ matters. The agent opens the PR and then hands off: it can't approve or merge it
 own work, and it confirms the outcome by pulling PR state with the `gh` CLI
 rather than assuming.
 
+The spec is treated as read-only but not frozen: it can **grow**, only through
+governed, dated addenda from an authoritative source (never by hand-editing
+`README.md`, which stays a faithful copy of what I was given — a revised spec
+replaces it wholesale from the source). When scope expands with new requirements
+or new Figma frames, I classify it (a real change vs. my own idea), raise it,
+capture it as an addendum, catalog the new frames, and then run it through the
+same specify → plan → tasks → implement → verify → review flow as everything
+else — so growth is auditable instead of smuggled in.
+
 I work in small conventional commits, and this document is deliberately
 organized to mirror that commit history — each `##` section below maps to one
 commit, so the journey reads in the same order it was built.
@@ -163,4 +172,17 @@ review-ready, and the PR template gained a checkbox so a missing entry is caught
 at review time. This keeps the development story 1:1 with the commit history
 instead of reconstructed from memory at the end. (This very section is the first
 entry written under that rule.)
+
+## docs: govern scope changes and new Figma frames
+
+Closed a gap in the constitution: it said `README.md` was immutable but never
+said how the spec is allowed to _grow_. `CLAUDE.md` §1.2 now clarifies that scope
+can expand only via dated, append-only addenda from an authoritative source —
+never by hand-editing `README.md` — and a new §2 "Scope changes" procedure spells
+out the steps (classify a real change vs. my own idea → raise → capture as an
+addendum → catalog the new Figma frames → run the normal specify → … → review
+flow). §4 gained a rule that new frames are cataloged with their nodeId and have
+tokens reconciled before implementation. I deliberately did **not** create the
+`SPEC_ADDENDUM.md` file yet — the procedure is documented, but an empty addendum
+would just be noise until real scope actually arrives.
 
