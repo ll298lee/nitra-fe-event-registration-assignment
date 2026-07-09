@@ -141,3 +141,15 @@ Scaffolded this `PLAN.md` — the intro and commit-by-commit sections above — 
 the living record of the development journey, ready to grow a new section per
 commit as the wizard gets built.
 
+## docs: require a PLAN.md journal entry per commit
+
+Made this journal a rule, not just a habit. `CLAUDE.md` §5 now mandates that
+every commit also add or update a matching `##` section here in `PLAN.md` — the
+`##` heading being the commit's conventional-commit subject — and that the entry
+land in the **same commit** as the change it documents, never backfilled later.
+The review gate (§2.6) treats a commit without its journal entry as not
+review-ready, and the PR template gained a checkbox so a missing entry is caught
+at review time. This keeps the development story 1:1 with the commit history
+instead of reconstructed from memory at the end. (This very section is the first
+entry written under that rule.)
+

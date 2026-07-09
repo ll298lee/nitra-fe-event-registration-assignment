@@ -35,6 +35,7 @@ Fill every section. Delete nothing; write "n/a" where a section doesn't apply.
 - [ ] Design tokens only — no hardcoded hex / typography literals
 - [ ] `README.md` untouched
 - [ ] Committed on a branch, not directly to `main`
+- [ ] `PLAN.md` journal section added/updated for each commit (§5 convention)
 
 ## AI-usage note
 

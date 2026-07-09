@@ -63,7 +63,8 @@ frame in Figma.
 6. **Review (human)** — _gate: definition of done._ Every change is reviewed by a human on
    GitHub before it counts as done. Review is **per commit**: keep commits small and
    atomic (each already names its spec area — §5).
-   - Work lives on a **branch**, never committed directly to `main`.
+   - Work lives on a **branch**, never committed directly to `main`. Each commit carries
+     its matching `PLAN.md` journal entry (§5) — a commit without one is not review-ready.
    - Open a PR against `main` with `gh pr create` (prefer one logical commit per PR). The
      description links the `README.md` rule(s) and Figma frame(s) implemented, the
      acceptance-criteria→test map from `IMPLEMENTATION_PLAN.md`, and an AI-usage note.
@@ -167,6 +168,17 @@ for it only if `figma-mcp-free` is insufficient.
 - **Commits:** conventional commits (repo uses `feat:` / `chore:` / `style:`); name the
   spec area (e.g. `feat: step 3 add-ons running total`). Keep commits **small and atomic** —
   each commit is the unit of human review (§2.6).
+- **`PLAN.md` journal (per commit):** every commit **must also add or update a matching
+  `##` section in `PLAN.md`** — the submission narrative (§1.5; distinct from
+  `IMPLEMENTATION_PLAN.md`, do not conflate). `PLAN.md` mirrors the commit history one
+  `##` section per commit, in order. Keep the existing convention and format:
+  - the `##` heading is the commit's conventional-commit subject (e.g.
+    `## feat: step 3 add-ons running total`);
+  - below it, describe _what and why_ in the doc's established first-person voice, using
+    `###` sub-sections (e.g. _AI follow-up questions_, _Command-line shortcuts_) where they
+    add value;
+  - the journal entry lands **in the same commit** as the change it documents — never a
+    separate trailing "docs" commit, and never left for later.
 - **Branches & PRs:** never commit feature work to `main`. Branch per change
   (e.g. `feat/step-1-attendee-info`), open a PR against `main` via `gh pr create` (the
   `.github/pull_request_template.md` checklist is auto-loaded), and hand off for human
