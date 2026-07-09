@@ -73,20 +73,18 @@ function onPrimary() {
       <button
         v-if="!isFirstStep"
         type="button"
-        class="flex h-10 cursor-pointer items-center gap-1 rounded-[10px] border-0 bg-neutral-muted-rest px-2 text-subtitle2 text-neutral-muted transition-colors hover:bg-neutral-muted-hover active:bg-neutral-muted-active"
+        class="flex h-10 cursor-pointer items-center justify-center rounded-[10px] border-0 bg-neutral-muted-rest px-2 text-subtitle2 text-neutral-muted transition-colors hover:bg-neutral-muted-hover active:bg-neutral-muted-active"
         @click="prev"
       >
-        <q-icon name="chevron_left" size="18px" />
         Back
       </button>
       <button
         type="button"
-        class="flex cursor-pointer items-center gap-1 border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active"
+        class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active"
         :class="primaryClass"
         @click="onPrimary"
       >
         {{ primaryLabel }}
-        <q-icon name="chevron_right" :size="isLastStep ? '22px' : '18px'" />
       </button>
     </footer>
   </div>

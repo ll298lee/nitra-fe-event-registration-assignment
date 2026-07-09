@@ -316,8 +316,16 @@ verified in-browser with `getComputedStyle`:
   step title `text-h2`(28) → **`text-h3`(24)**; stepper label per-state weights +
   `text-neutral-quiet` upcoming; buttons `text-subtitle2`/`text-subtitle1` (14/16).
 - **Exact insets** (header 48px / body 120px) and **exact button sizing** (40/48px
-  height, 10/12px radius, trailing chevrons); todo connector `bg-surface-l2` per Figma.
+  height, 10/12px radius); todo connector `bg-surface-l2` per Figma.
 
 Discrepancies recorded in §4 (no silent rounding): stepper label 13px → `text-md`(14,
 nearest); Figma weights 680/600/500/400 → nearest token weights; 10px radius →
 `rounded-[10px]`; native `<button>` over `QBtn` for exact sizing.
+
+## fix(shell): remove invented footer-button icons
+
+Follow-up to PR #7 review: the footer buttons had no chevron/arrow icons in Figma,
+but I had added leading/trailing chevrons (an extraction artifact I wrongly
+"interpreted" into a direction). Removed them — Next/Back/Submit are now text-only,
+matching Figma. Verified in-browser: 0 icons in every footer button. (The completed-
+step **check** glyphs in the stepper stay — those are in Figma.)

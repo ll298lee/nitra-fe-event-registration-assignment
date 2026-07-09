@@ -111,7 +111,8 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   current=semibold / completed=medium / upcoming=regular; **todo connector `bg-surface-l2`
   (gray[50])** per Figma. Footer buttons: Next `40px`/`rounded-[10px]`/`text-subtitle2`, Submit
   `48px`/`rounded-xl`/`text-subtitle1`, Back `bg-neutral-muted-rest` + `text-neutral-muted`;
-  primary `bg-accent-emphasis-rest` (`#FB7429`) + trailing chevron.
+  primary `bg-accent-emphasis-rest` (`#FB7429`). **Text-only labels — no icons** (Figma has no
+  arrow/chevron on the footer buttons; an earlier chevron was removed as invented).
 - **Shell discrepancies (measured value → resolution, per §1.3/§4 — no silent rounding):**
   (1) **stepper label 13px** → **`text-md` (14px)**, the nearest on-scale token (scale has 12/14,
   no 13). (2) **Figma font-weights 680/600/500/400** → nearest token weights **630/610/570/485**
@@ -120,9 +121,8 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   `<button>` for footer/stepper controls** (not `QBtn`) for exact height/radius/padding fidelity;
   `QBtn`'s min-height/padding fight the measured `40/48px`. Interactive states use the
   `-rest/-hover/-active` token triples. (5) **Header logo glyph** approximated with a Quasar
-  `event` icon (no exported asset); **Next/Submit use `chevron_right`, Back `chevron_left`** (Figma's
-  generic chevron read as down; forward/back is the clear intent). (6) **Responsive** not in Figma
-  (fixed 1440) — desktop insets shipped; responsive is the Phase 4 task.
+  `event` icon (no exported asset). (6) **Responsive** not in Figma (fixed 1440) — desktop insets
+  shipped; responsive is the Phase 4 task.
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
