@@ -270,3 +270,24 @@ Critical decisions:
 
 Tests: AC-N-1 (free nav), AC-N-2 (state survives forward/back), AC-N-3 (single
 shared instance via provide/inject).
+
+## feat(shell): free-navigation wizard stepper + shell layout
+
+The wizard skeleton, built from Figma (Step 1 `1069:968` / Step 4 `1074:897` via
+`figma-mcp-free`): a `WizardStepper` component + the `IndexPage` shell (header with
+dynamic event name → stepper → step-title + placeholder content → footer action
+bar), all token-styled, no hex. Step forms land in later PRs.
+
+Critical decisions:
+
+- **Custom token stepper, clickable for free nav (D13 confirmed)** — hand-built (not
+  Quasar's Material `QStepper`); teal current/completed circles with a check glyph on
+  completed, gray upcoming. Figma doesn't show step-click, but D13 mandates non-gated
+  navigation, so steps are clickable.
+- **Event name is fetched from the facade, not hardcoded** — matches the "dynamic from
+  state" note (§4); the Figma "2025" title is a placeholder.
+- **Verified visually** against Figma via `agent-browser` at 1440px (header, stepper
+  states, footer) — parity confirmed.
+
+Tests: `WizardStepper.spec.js` — AC-N-1 (clicking a future step emits `select`, no
+gate) + completed/current rendering.

@@ -75,7 +75,7 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
 | **D10** | A **stale** workshop conflict (revisit Step 2 and add a conflicting session after selecting the workshop) is **kept and surfaced at submit**, not silently auto-removed.                                                                                                                                                                                                                                                                                                        | Consistent with the deferred-validation philosophy; never mutate the user's selections behind their back.                                                                                                                                   |
 | **D11** | `WORKSHOP_DISCOUNT_RATE = 0.10` is a **derived constant** in `pricing.js`.                                                                                                                                                                                                                                                                                                                                                                                                      | The mock stores the VIP perk only as the display string `"10% off workshops"` — there is **no numeric rate in the data**. Documenting this keeps `0.10` from reading as a magic number.                                                     |
 | **D12** | Capacity-full → **disabled + "Full"** for sessions **and** the `ws2` workshop.                                                                                                                                                                                                                                                                                                                                                                                                  | README spells this out for sessions only; extending it to full workshops is a deliberate spec-gap fill for consistency.                                                                                                                     |
-| **D13** | **Custom stepper** styled with tokens, **free/non-linear** navigation (provisional — confirm against Figma during the shell commit).                                                                                                                                                                                                                                                                                                                                            | Quasar's Material `QStepper` defaults fight the Figma and Design Fidelity is 20% of the grade. Navigation must not be validation-gated.                                                                                                     |
+| **D13** | **Custom stepper** styled with tokens, **free/non-linear** navigation. **Confirmed against Figma in the shell PR:** hand-built token stepper (teal current/completed circles, check glyph on completed, gray upcoming); steps are **clickable** for free nav — Figma doesn't depict step-click, but D13 mandates non-gated navigation, so I made them clickable.                                                                                                                | Quasar's Material `QStepper` defaults fight the Figma and Design Fidelity is 20% of the grade. Navigation must not be validation-gated.                                                                                                     |
 | **D14** | **i18n in scope** — add `vue-i18n`, scaffold an `en` locale, extract UI copy.                                                                                                                                                                                                                                                                                                                                                                                                   | Requested. Dependency rationale: isolates all display strings (labels, banners, error messages) behind one locale file, easing copy review against README/Figma and future localization. Registered via a boot file.                        |
 | **D15** | **Post-success: terminal / locked** — success screen (generated confirmation #, personalized thank-you echoing name + email) + a single **"Back to Home"** CTA that resets to the entry state. No "register another", no read-only back-navigation.                                                                                                                                                                                                                             | Matches Figma **Success State** frame `1075:903` exactly.                                                                                                                                                                                   |
 | **D16** | Merch `maxQuantity` is a **top-level total** across sizes (data-verified); `merch4` (max 1) renders a quantity control capped at 1.                                                                                                                                                                                                                                                                                                                                             | Data-backed; the size+quantity interaction shape is confirmed against the Figma Step 3 frame during implementation.                                                                                                                         |
@@ -94,9 +94,18 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   what "all interactive states handled" means in this codebase**.
 - **Breakpoints:** `tablet 768` / `desktop 1024` (from `src/unocss/index.js`) — use these, not
   arbitrary values.
-- **Track badges (decision, no token yet):** tracks `main` / `frontend` / `backend` / `devops` have
-  no dedicated tokens — map each to an existing semantic palette (e.g. brand/info/accent/warning),
-  recorded here once chosen from the Step 2 Figma frame. Never hardcode a hex.
+- **Track badges (mapping observed from Step 2 frame `1072:912`, applied in the Step 2 PR):**
+  `main` → neutral (`bg-surface-l2` / `text-neutral-muted`), `frontend` → accent
+  (`bg-accent-muted-rest` / `text-accent-emphasis`), `backend` → info
+  (`bg-info-subtle-rest` / `text-info-emphasis`), `devops` → accent. No dedicated track token
+  exists; these reuse existing palettes — never hardcode a hex.
+- **Shell + stepper (resolved for the shell PR, from Step 1 `1069:968` / Step 4 `1074:897`):**
+  vertical band layout — header (teal `bg-brand-emphasis-rest` logo tile + dynamic event name,
+  `text-subtitle1`) → stepper → content (`text-h2` step title) → footer action bar; centered
+  `max-w-[1200px]` column. Stepper per D13. Footer: single primary right-aligned on step 1,
+  Back (left, `bg-surface-l3`) + primary (right, `bg-accent-emphasis-rest` / `text-inverse`) on
+  later steps. **No token discrepancies** (verified via `export_tokens`); minor judgment calls:
+  hairline dividers use `border-neutral-muted`, the "todo" connector uses `bg-surface-l3`.
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
@@ -390,8 +399,8 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 - [x] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
       conflict; `ws1` vs `s10` (no) / `s11` (yes); one containment case (AC-C-*).
 - [x] `feat(state)` `useRegistration` composable, provide/inject, survives free nav (D2).
-- [ ] `feat(shell)` wizard layout + free-navigation stepper (D13).
-- [ ] `docs(plan)` record state / timezone / stepper decisions.
+- [x] `feat(shell)` wizard layout + free-navigation stepper (D13).
+- [x] `docs(plan)` record state / timezone / stepper decisions.
 
 ### Phase 3 — Steps
 
@@ -476,6 +485,7 @@ Per-PR record of the human `review` gate — one row per merged PR (a PR is the 
 sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
 agent never self-approves.
 
-| PR   | Theme / branch                                                                                                              | Reviewer  | Status                           |
-| ---- | --------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
-| #TBD | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests) | _pending_ | **Open — awaiting human review** |
+| PR                                                                              | Theme / branch                                                                                                              | Reviewer  | Status                           |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
+| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests) | ll298lee  | **Merged** (2026-07-09)          |
+| #TBD                                                                            | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper        | _pending_ | **Open — awaiting human review** |
