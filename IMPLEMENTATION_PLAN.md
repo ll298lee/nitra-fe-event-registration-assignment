@@ -1,0 +1,451 @@
+# IMPLEMENTATION_PLAN.md — living engineering plan
+
+> **Status:** foundation not yet started. This is the living plan mandated by `CLAUDE.md` §1.5 /
+> §2. It records the spec-driven approach, every design/dependency **decision with rationale**, and
+> the **acceptance-criteria → test map**. It is kept up to date as work proceeds.
+>
+> **Not** the submission `PLAN.md`. `PLAN.md` (README §Submission) is the submission narrative;
+> this file is the engineering plan. Do not conflate them.
+
+---
+
+## 1. Purpose & how to use this doc
+
+We build the 4-step event-registration wizard (Attendee Info → Session Selection → Add-ons →
+Review & Submit) under **spec-driven development**. Each arrow is a blocking gate:
+
+**specify → plan → tasks → implement → verify**
+
+- **`README.md`** is the immutable **functional** spec (fields, validation, pricing, capacity,
+  conflict logic). Read-only — never edited.
+- **Figma** (`6Jl8Jyv7bETcHg2carNi6d`, "Nitra FE Assessment — v2") is the **visual** spec. Frame
+  nodeIds are catalogued in §4.
+- Every acceptance criterion in §5 is Given/When/Then and maps to a named Vitest case **or** a
+  visual `agent-browser` vs Figma check. If a rule can't be written as a failing test, it isn't
+  specified yet.
+- **Definition of done:** `yarn check` (ESLint + Prettier) and `yarn test:unit:ci` green, and the UI
+  matches its Figma frame.
+
+All numbers in this plan were verified directly against `src/mocks/{event,sessions,addons}.js`, the
+UnoCSS token files, and `quasar.config.js` — not from memory.
+
+---
+
+## 2. Architecture & file layout
+
+Pure logic is written and tested **before** any UI, so the numeric acceptance criteria go green
+independently of components (satisfies the "must be testable" gate).
+
+| Module                               | Responsibility                                                                                                                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/data/facade.js`                 | Thin **async** wrapper over the three mocks (simulated fetch) — exposes `fetchEvent()`, `fetchSessions()`, `fetchAddons()`, `submitRegistration()` returning Promises so loading/pending states are real (D1). |
+| `src/data/normalize.js`              | JSDoc `@typedef`s (`Session`, `Addon`, `Ticket`, `Registration`) + normalizers that parse ISO strings **once at the edge**.                                                                                    |
+| `src/utils/pricing.js`               | `formatCurrency`, `WORKSHOP_DISCOUNT_RATE`, workshop-discount math (D5, D11).                                                                                                                                  |
+| `src/utils/datetime.js`              | Wall-clock time-range formatter + day-group key (D4).                                                                                                                                                          |
+| `src/logic/conflicts.js`             | `intervalsOverlap`, `detectConflicts` — strict inequality (D6).                                                                                                                                                |
+| `src/logic/capacity.js`              | `isFull`, `remainingSpots`.                                                                                                                                                                                    |
+| `src/logic/validation.js`            | Pure predicates: `isValidEmail`, `isValidPhone` (lenient), required/conditional checks, `validateAll` → per-step error map (D7–D10).                                                                           |
+| `src/composables/useRegistration.js` | Single source of wizard state via **provide/inject** (D2); survives free forward/back navigation.                                                                                                              |
+| `src/composables/useOrderSummary.js` | **Fully computed** totals + VIP workshop-only discount, zero watchers (D3).                                                                                                                                    |
+| `src/composables/useValidation.js`   | Wraps `validation.js` with touched-field tracking + "reward early, punish late" (D7).                                                                                                                          |
+| `src/components/wizard/*`            | Step SFCs (`StepAttendee`, `StepSessions`, `StepAddons`, `StepReview`, `SuccessScreen`) + shared field/card components.                                                                                        |
+| `src/i18n/en.js` + boot              | `vue-i18n` `en` locale; UI copy extracted behind it (D14).                                                                                                                                                     |
+| `src/pages/IndexPage.vue`            | Hosts the stepper shell + provides `useRegistration`.                                                                                                                                                          |
+
+Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
+`test/vitest/__tests__/`.
+
+---
+
+## 3. Decisions log
+
+| #       | Decision                                                                                                                                                                                                                                            | Rationale                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1**  | Thin **async facade** over the mocks (simulated fetch).                                                                                                                                                                                             | Loading/pending states are graded but the mocks are synchronous; a facade resolves that tension and mirrors real API integration.                                                                                    |
+| **D2**  | `useRegistration` composable + **provide/inject**, not Pinia.                                                                                                                                                                                       | The rubric names composable/inject as accepted patterns; adding a store is negative restraint. State must survive free forward/back navigation.                                                                      |
+| **D3**  | `useOrderSummary` **fully computed, zero watchers**.                                                                                                                                                                                                | Makes the killer sequence free & instant: VIP → add ws1 → Review → Edit → switch to General → discount vanishes with no reconciliation code.                                                                         |
+| **D4**  | **Wall-clock timezone policy** for display and day-group keys.                                                                                                                                                                                      | All timestamps are `Z`/UTC but represent event wall-clock. Applying the viewer's offset (Taipei +8) shifts everything and pushes `ws2` (18:30Z → 02:30 next-day local) onto the wrong day.                           |
+| **D5**  | Currency via `Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })`.                                                                                                                                                                  | `$X,XXX.XX`, always two decimals, thousands separators.                                                                                                                                                              |
+| **D6**  | **Strict-inequality** overlap (`aStart < bEnd && bStart < aEnd`); back-to-back = no conflict.                                                                                                                                                       | The data is engineered around the 14:00Z boundary (`s10`↔`s11`, `ws1`↔`s10`); touch must remain selectable.                                                                                                          |
+| **D7**  | **Deferred, unified submit-time validation**; after the first failed submit, touched fields re-validate live ("reward early, punish late").                                                                                                         | README defers all validation to Step 4; live-after-failure is the humane and testable behavior. Before the first submit, nothing eager.                                                                              |
+| **D8**  | **Lenient phone** validation (format-ish, not strict E.164).                                                                                                                                                                                        | Over-strict phone regex is a junior tell and rejects valid international numbers.                                                                                                                                    |
+| **D9**  | Session↔workshop conflict **owned by Step 3** (where the dependent workshop choice lives); message **names the conflicting session**. Step 1 can display an error caused by a Step 3 condition (shipping-required-from-merch).                      | Flag errors where the causing choice lives; make cross-step causes explicit.                                                                                                                                         |
+| **D10** | A **stale** workshop conflict (revisit Step 2 and add a conflicting session after selecting the workshop) is **kept and surfaced at submit**, not silently auto-removed.                                                                            | Consistent with the deferred-validation philosophy; never mutate the user's selections behind their back.                                                                                                            |
+| **D11** | `WORKSHOP_DISCOUNT_RATE = 0.10` is a **derived constant** in `pricing.js`.                                                                                                                                                                          | The mock stores the VIP perk only as the display string `"10% off workshops"` — there is **no numeric rate in the data**. Documenting this keeps `0.10` from reading as a magic number.                              |
+| **D12** | Capacity-full → **disabled + "Full"** for sessions **and** the `ws2` workshop.                                                                                                                                                                      | README spells this out for sessions only; extending it to full workshops is a deliberate spec-gap fill for consistency.                                                                                              |
+| **D13** | **Custom stepper** styled with tokens, **free/non-linear** navigation (provisional — confirm against Figma during the shell commit).                                                                                                                | Quasar's Material `QStepper` defaults fight the Figma and Design Fidelity is 20% of the grade. Navigation must not be validation-gated.                                                                              |
+| **D14** | **i18n in scope** — add `vue-i18n`, scaffold an `en` locale, extract UI copy.                                                                                                                                                                       | Requested. Dependency rationale: isolates all display strings (labels, banners, error messages) behind one locale file, easing copy review against README/Figma and future localization. Registered via a boot file. |
+| **D15** | **Post-success: terminal / locked** — success screen (generated confirmation #, personalized thank-you echoing name + email) + a single **"Back to Home"** CTA that resets to the entry state. No "register another", no read-only back-navigation. | Matches Figma **Success State** frame `1075:903` exactly.                                                                                                                                                            |
+| **D16** | Merch `maxQuantity` is a **top-level total** across sizes (data-verified); `merch4` (max 1) renders a quantity control capped at 1.                                                                                                                 | Data-backed; the size+quantity interaction shape is confirmed against the Figma Step 3 frame during implementation.                                                                                                  |
+
+**New dependency introduced:** `vue-i18n` (per D14) — the only planned addition; rationale above.
+
+---
+
+## 4. Design-token & Figma reconciliation
+
+- **Tokens reused (no hex, ever):** typography `text-h1..h4`, `text-subtitle1/2`; text colors
+  `text-neutral{,-muted,-quiet,-disabled}`, `text-brand/accent/success/danger/info/warning{,-emphasis}`;
+  surfaces `bg-surface-l0..l3`; borders/dividers `border-*`, `divider-*`; interactive state triples
+  `bg-<palette>-<variant>-{rest,hover,active}` — **the `-rest`/`-hover`/`-active` pairs are exactly
+  what "all interactive states handled" means in this codebase**.
+- **Breakpoints:** `tablet 768` / `desktop 1024` (from `src/unocss/index.js`) — use these, not
+  arbitrary values.
+- **Track badges (decision, no token yet):** tracks `main` / `frontend` / `backend` / `devops` have
+  no dedicated tokens — map each to an existing semantic palette (e.g. brand/info/accent/warning),
+  recorded here once chosen from the Step 2 Figma frame. Never hardcode a hex.
+- **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
+  **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
+  (grounds the step-error-indicator design).
+- **Placeholder-copy discrepancy (recorded):** the Success frame shows "WebDev Summit 2025 /
+  TechConf 2025 / John / john@example.com" while the mock event is "WebDev Summit 2028". Event name,
+  attendee name, and email are rendered **dynamically from state**; the "2025/TechConf" strings are
+  Figma placeholders, not literal copy. The confirmation number is generated at runtime.
+- **Plugin gotcha:** `quasar.config.js` `framework.plugins` is currently `[]`. If Notify/Dialog are
+  used for affordances they **must** be registered there or they silently no-op.
+
+---
+
+## 5. Acceptance criteria → test map
+
+Legend: **PF** = pure-function Vitest (no mount) · **SFC** = component test (`@vue/test-utils` +
+`installQuasarPlugin()`) · **VIS** = visual/manual via `agent-browser` on `:9001` vs Figma.
+
+### 5.1 Step 1 — Attendee Info
+
+- **AC-1.1** Given Step 1 loads, When rendered, Then Full Name, Email, Phone, Company, Job Title
+  inputs and an **optional** Shipping Address input are shown.
+- **AC-1.2** Given three ticket cards (General $299 / VIP $599 / Student $99) from `event`, When one
+  is clicked, Then exactly one is selected (single-select).
+- **AC-1.3** Given the VIP card, When rendered, Then its perks include "10% off workshops"; General
+  and Student do not.
+- **AC-1.4** Given prices 299/599/99, When cards render, Then each shows `$299.00` / `$599.00` /
+  `$99.00`.
+- **AC-1.5** Given nothing touched, When Step 1 displays, Then **no** inline validation errors show.
+- **AC-1.6** Given merch is selected in Step 3, When returning to Step 1, Then Shipping Address is
+  required and can show an error indicator (Step 1 error caused by a Step 3 condition).
+- **AC-1.7** Given all merch removed, When state recomputes, Then Shipping Address reverts to
+  optional **live** (non-sticky).
+
+| AC  | Test                                                                                             | Kind     |
+| --- | ------------------------------------------------------------------------------------------------ | -------- |
+| 1.1 | `StepAttendee.spec.js` → "renders attendee fields + optional shipping"                           | SFC      |
+| 1.2 | `StepAttendee.spec.js` → "ticket selection is single-select"                                     | SFC      |
+| 1.3 | `StepAttendee.spec.js` → "VIP card shows 10% off workshops perk"                                 | SFC      |
+| 1.4 | `pricing.test.js` → "formatCurrency 299/599/99 → \$299.00/\$599.00/\$99.00"                      | PF       |
+| 1.5 | `StepAttendee.spec.js` → "no inline errors before first submit"                                  | SFC      |
+| 1.6 | `validation.test.js` → "shipping required when merch present" + `StepAttendee.spec.js` indicator | PF + SFC |
+| 1.7 | `validation.test.js` → "shipping optional when no merch (non-sticky)"                            | PF       |
+
+### 5.2 Step 2 — Session Selection
+
+- **AC-2.1** Given 12 sessions, When rendered, Then they group into exactly two day headings —
+  Nov 15 (s1–s6) and Nov 16 (s7–s12) — using a **wall-clock** day key.
+- **AC-2.2** Given each session, When a card renders, Then it shows title, speaker, time range,
+  track badge, and remaining spots.
+- **AC-2.3** Given `s2` (120/120) and `s9` (90/90), When rendered, Then they are the **only** two
+  shown as Full/disabled and are not selectable.
+- **AC-2.4** Given registered/capacity, When computed, Then remaining spots: `s1`=13, `s3`=22,
+  `s11`=51 (`s2`=0, `s9`=0).
+- **AC-2.5** Given a session time, When rendered, Then the range is **wall-clock** (e.g. `s6`
+  "3:30 PM – 5:00 PM" for 15:30–17:00Z), not shifted by viewer offset.
+- **AC-2.6** Given free selection, When co-selecting `s4`+`s5` (or `s11`+`s12`), Then Step 2 imposes
+  **no** conflict gate (deferred to Step 4).
+- **AC-2.7** Given ticket type, When selecting sessions, Then session access is **not** gated by
+  ticket (all tickets get all sessions).
+
+| AC  | Test                                                                            | Kind |
+| --- | ------------------------------------------------------------------------------- | ---- |
+| 2.1 | `datetime.test.js` → "dayGroupKey groups s1–s6=2028-11-15, s7–s12=2028-11-16"   | PF   |
+| 2.2 | `StepSessions.spec.js` → "card shows title/speaker/time/track/spots"            | SFC  |
+| 2.3 | `capacity.test.js` → "isFull true only for s2 & s9"                             | PF   |
+| 2.4 | `capacity.test.js` → "remainingSpots s1=13, s3=22, s11=51"                      | PF   |
+| 2.5 | `datetime.test.js` → "formatTimeRange(s6)='3:30 PM – 5:00 PM' (no local shift)" | PF   |
+| 2.6 | `StepSessions.spec.js` → "co-selecting s4 and s5 allowed"                       | SFC  |
+| 2.7 | `StepSessions.spec.js` → "no ticket-based session gating"                       | SFC  |
+
+### 5.3 Step 3 — Add-ons
+
+- **AC-3.1** Given the addons, When rendered, Then three sections in order: **Workshops** (ws1, ws2),
+  **Meal Packages** (meal1, meal2), **Merchandise** (merch1–4).
+- **AC-3.2** Given `ws2` (25/25), When rendered, Then it is Full/unavailable regardless of session
+  selection.
+- **AC-3.3** Given `s11` **or** `s12` selected in Step 2, When Step 3 renders, Then `ws1` is
+  unavailable due to a session conflict; the message names the conflicting session.
+- **AC-3.4** Given only `s10` selected (touches `ws1` at 14:00Z), When Step 3 renders, Then `ws1`
+  stays available (touch ≠ conflict).
+- **AC-3.5** Given no conflicting session, When `ws1` (22/30) renders, Then it is selectable and
+  shows 8 remaining.
+- **AC-3.6** Given `merch1` (sizes S–XXL, max 3 **total**), When added, Then a size selector + a
+  quantity control capped at total 3 are shown.
+- **AC-3.7** Given `merch4` (sizes 13/15/16", max 1), When added, Then a size selector is shown and
+  quantity is capped at 1.
+- **AC-3.8** Given `merch2` (max 5) / `merch3` (max 2), no sizes, When added, Then a quantity control
+  (no size selector) capped at 5 / 2.
+- **AC-3.9** Given any merch added, When rendered, Then the shipping banner shows the **exact** README
+  copy.
+- **AC-3.10** Given no merch, When rendered, Then no banner.
+- **AC-3.11** Given selections change, When the running total renders, Then it updates live (ticket +
+  each add-on line − VIP workshop discount = total), all `$X,XXX.XX`.
+
+| AC   | Test                                                                               | Kind     |
+| ---- | ---------------------------------------------------------------------------------- | -------- |
+| 3.1  | `StepAddons.spec.js` → "groups workshop/meal/merch in order"                       | SFC      |
+| 3.2  | `capacity.test.js` → "isFull(ws2) true, isFull(ws1) false"                         | PF       |
+| 3.3  | `conflicts.test.js` → "ws1 conflicts with s11 and s12; message names session"      | PF + SFC |
+| 3.4  | `conflicts.test.js` → "ws1 not conflicting with s10 (touch 14:00Z)"                | PF       |
+| 3.5  | `capacity.test.js` → "remainingSpots(ws1)=8"                                       | PF       |
+| 3.6  | `StepAddons.spec.js` → "merch1 size selector + qty capped total 3"                 | SFC      |
+| 3.7  | `StepAddons.spec.js` → "merch4 sizes + qty capped 1"                               | SFC      |
+| 3.8  | `StepAddons.spec.js` → "merch2/merch3 qty-only capped 5/2"                         | SFC      |
+| 3.9  | `StepAddons.spec.js` → "shipping banner exact text when merch added"               | SFC      |
+| 3.10 | `StepAddons.spec.js` → "no banner when no merch"                                   | SFC      |
+| 3.11 | `useOrderSummary.test.js` + `StepAddons.spec.js` → "running total recomputes live" | PF + SFC |
+
+### 5.4 Step 4 — Review & Submit
+
+- **AC-4.1** Given Steps 1–3, When Step 4 renders, Then a readable grouped summary (attendee, ticket,
+  sessions, add-ons) is shown.
+- **AC-4.2** Given selections, When the breakdown renders, Then every line + subtotal + grand total
+  in `$X,XXX.XX`.
+- **AC-4.3** Given each section, When rendered, Then an **Edit** control jumps to the matching step;
+  state is preserved.
+- **AC-4.4** Given Submit, When validation runs, Then **all** steps validate at once (unified).
+- **AC-4.5** Given failures, When rendered, Then each failing step is indicated and jumpable;
+  session↔workshop conflicts flag **Step 3**, missing-shipping-when-merch flags **Step 1**.
+- **AC-4.6** Given a **stale** conflict (ws1 selected, then s11 added via back-nav), When Submit runs,
+  Then ws1 is **kept** and reported as a submit-time conflict (not auto-removed).
+- **AC-4.7** Given all valid, When Submit succeeds, Then the terminal success screen renders (D15).
+- **AC-4.8** Given async submit in-flight, When pending, Then a pending state shows and re-submits are
+  prevented.
+
+| AC  | Test                                                                                      | Kind     |
+| --- | ----------------------------------------------------------------------------------------- | -------- |
+| 4.1 | `StepReview.spec.js` → "renders full grouped summary"                                     | SFC      |
+| 4.2 | `useOrderSummary.test.js` → "itemized lines + grand total"                                | PF + SFC |
+| 4.3 | `StepReview.spec.js` → "Edit buttons navigate to steps 1–3, state preserved"              | SFC      |
+| 4.4 | `validation.test.js` → "validateAll aggregates across steps"                              | PF       |
+| 4.5 | `validation.test.js` → "conflict→step3, shipping→step1" + `StepReview.spec.js` indicators | PF + SFC |
+| 4.6 | `validation.test.js` → "stale ws1 conflict kept + reported at submit"                     | PF       |
+| 4.7 | `StepReview.spec.js` → "success screen after valid submit"                                | SFC      |
+| 4.8 | `StepReview.spec.js` → "pending state; double-submit guarded"                             | SFC      |
+
+### 5.5 Cross-cutting — Navigation / State
+
+- **AC-N-1** Given the stepper, When navigating, Then movement is **free/non-linear** (any step
+  reachable without passing validation).
+- **AC-N-2** Given data in Steps 1 & 3, When navigating forward then back, Then all state survives.
+- **AC-N-3** Given no Pinia, When inspected, Then a single `useRegistration` instance is
+  provided at root and injected by steps.
+
+| AC  | Test                                                                   | Kind |
+| --- | ---------------------------------------------------------------------- | ---- |
+| N-1 | `Wizard.spec.js` → "stepper allows free navigation"                    | SFC  |
+| N-2 | `useRegistration.test.js` → "state persists across step changes"       | PF   |
+| N-3 | `useRegistration.test.js` → "single reactive store via provide/inject" | PF   |
+
+### 5.6 Cross-cutting — Time & Timezone
+
+- **AC-T-1** Given `Z` timestamps that mean wall-clock, When formatted, Then times render wall-clock;
+  `ws2` (18:30Z) stays on **Nov 15**, not pushed to Nov 16 by a +8 offset.
+- **AC-T-2** Given the day-group key, When computed for all 12 sessions, Then keys use the wall-clock
+  date only (s1–s6 → Nov 15, s7–s12 → Nov 16).
+- **AC-T-3** Given a range, When formatted, Then "h:mm AM/PM – h:mm AM/PM" wall-clock (e.g. `s10`
+  "1:00 PM – 2:00 PM", `ws1` "2:00 PM – 5:00 PM").
+
+| AC  | Test                                                                | Kind |
+| --- | ------------------------------------------------------------------- | ---- |
+| T-1 | `datetime.test.js` → "ws2 stays Nov 15 15:30–18:30, no local shift" | PF   |
+| T-2 | `datetime.test.js` → "dayGroupKey wall-clock for all sessions"      | PF   |
+| T-3 | `datetime.test.js` → "formatTimeRange s10 & ws1 wall-clock"         | PF   |
+
+### 5.7 Cross-cutting — Pricing / Discount
+
+Rate = **0.10** (derived constant, D11). Discount applies to **workshops only**.
+
+- **AC-P-1** Given `formatCurrency`, When called, Then two decimals + separators, e.g.
+  `formatCurrency(1234.5) === '$1,234.50'`.
+- **AC-P-2** Given VIP + `ws1` ($149), When the summary computes, Then workshop discount = **$14.90**
+  and ws1 net = **$134.10**.
+- **AC-P-3** Given the discount, When computed, Then it applies **only** over selected workshops
+  (`ws2` is full → never contributes).
+- **AC-P-4** Given VIP, When meals/merch/ticket price, Then **no** discount (meal1 stays $45; ticket
+  stays $599).
+- **AC-P-5** Given General or Student + `ws1`, When computed, Then discount = $0.00, ws1 = $149.00.
+- **AC-P-6** Given VIP + `ws1` then ticket switched to General (via Edit), When recomputed, Then the
+  discount vanishes instantly: **$733.10** (599+149−14.90) → **$448.00** (299+149).
+- **AC-P-7** Given a full cart (ticket + `ws1` $149 + `meal1` $45 + `merch1`×2 $70): General
+  subtotal **$563.00** (discount $0); same cart as VIP **$848.10** (863 − 14.90).
+
+| AC  | Test                                                                   | Kind |
+| --- | ---------------------------------------------------------------------- | ---- |
+| P-1 | `pricing.test.js` → "formatCurrency two-decimals + separators"         | PF   |
+| P-2 | `pricing.test.js` → "workshopDiscount(VIP, ws1)=14.90; net 134.10"     | PF   |
+| P-3 | `useOrderSummary.test.js` → "discount only over selected workshops"    | PF   |
+| P-4 | `pricing.test.js` → "no discount on meals/merch/ticket"                | PF   |
+| P-5 | `pricing.test.js` → "General/Student → discount 0"                     | PF   |
+| P-6 | `useOrderSummary.test.js` → "ticket switch recomputes 733.10 → 448.00" | PF   |
+| P-7 | `useOrderSummary.test.js` → "full-cart VIP 848.10 / General 563.00"    | PF   |
+
+### 5.8 Cross-cutting — Conflict detection
+
+- **AC-C-1** Given `intervalsOverlap`, When intervals strictly overlap, Then true; touching endpoints
+  → false.
+- **AC-C-2** Given `detectConflicts`, When run, Then `s4`↔`s5` and `s11`↔`s12` are live conflicts;
+  `s2`↔`s3` and `s8`↔`s9` are conflict pairs but **decoyed** (`s2`,`s9` full → not co-selectable).
+- **AC-C-3** Given `ws1` vs sessions, When checked, Then conflicts with `s11` & `s12`, not `s10`
+  (touch at 14:00Z).
+- **AC-C-4** Given `ws2` (full) overlapping `s6`, When checked, Then `ws2` is unselectable so no live
+  conflict arises.
+- **AC-C-5** Given a detected conflict, When surfaced, Then attributed to Step 3 and names the
+  conflicting session.
+
+| AC  | Test                                                              | Kind |
+| --- | ----------------------------------------------------------------- | ---- |
+| C-1 | `conflicts.test.js` → "intervalsOverlap strict vs touching"       | PF   |
+| C-2 | `conflicts.test.js` → "flags s4/s5, s11/s12; decoys s2/s3, s8/s9" | PF   |
+| C-3 | `conflicts.test.js` → "ws1 vs s10/s11/s12"                        | PF   |
+| C-4 | `conflicts.test.js` → "ws2 full: no live conflict"                | PF   |
+| C-5 | `conflicts.test.js` → "conflict message names session"            | PF   |
+
+### 5.9 Cross-cutting — Capacity
+
+- **AC-Cap-1** Given `isFull = registered >= capacity`, When applied to sessions, Then true only for
+  `s2` and `s9`.
+- **AC-Cap-2** Given add-ons, When applied, Then true only for `ws2`; meals/merch have no capacity
+  (always available).
+- **AC-Cap-3** Given `remainingSpots`, When computed, Then `s1`=13, `s3`=22, `s11`=51, `ws1`=8,
+  `s2`=0, `s9`=0.
+- **AC-Cap-4** Given a full item, When rendered, Then disabled and cannot be added to state.
+
+| AC    | Test                                                                                  | Kind |
+| ----- | ------------------------------------------------------------------------------------- | ---- |
+| Cap-1 | `capacity.test.js` → "isFull sessions: only s2,s9"                                    | PF   |
+| Cap-2 | `capacity.test.js` → "isFull addons: only ws2; meals/merch uncapped"                  | PF   |
+| Cap-3 | `capacity.test.js` → "remainingSpots spot values"                                     | PF   |
+| Cap-4 | `StepSessions.spec.js` / `StepAddons.spec.js` → "full item disabled + not selectable" | SFC  |
+
+### 5.10 Cross-cutting — Validation
+
+- **AC-V-1** Given required fields (name, email, phone, company, jobTitle), When empty at submit,
+  Then each errors.
+- **AC-V-2** Given email, When `isValidEmail` runs, Then `a@b.com` valid; `abc`, `a@`, `a@b` invalid.
+- **AC-V-3** Given phone (**lenient**), When `isValidPhone` runs, Then "+1 415 555 0100",
+  "(415) 555-0100", "4155550100" pass; "abc", "12" fail.
+- **AC-V-4** Given shipping conditional, When any merch selected, Then required; when none, optional
+  (recomputed live).
+- **AC-V-5** Given "reward early, punish late", When the first submit fails, Then touched fields
+  re-validate live thereafter; before the first submit, no field re-validates on input.
+- **AC-V-6** Given `validateAll(state)`, When run, Then it returns a per-step error map.
+
+| AC  | Test                                                                                                      | Kind     |
+| --- | --------------------------------------------------------------------------------------------------------- | -------- |
+| V-1 | `validation.test.js` → "required fields error when empty"                                                 | PF       |
+| V-2 | `validation.test.js` → "isValidEmail table"                                                               | PF       |
+| V-3 | `validation.test.js` → "isValidPhone lenient table"                                                       | PF       |
+| V-4 | `validation.test.js` → "shipping conditional on merch"                                                    | PF       |
+| V-5 | `useValidation.test.js` + `StepAttendee.spec.js` → "no live validation pre-submit; live after first fail" | PF + SFC |
+| V-6 | `validation.test.js` → "validateAll returns per-step error map"                                           | PF       |
+
+### 5.11 Cross-cutting — Submission / Success
+
+- **AC-S-1** Given the async facade, When data is requested, Then loading states are exercisable
+  (session list shows loading before resolve).
+- **AC-S-2** Given a valid submit, When it resolves, Then the success screen renders with a generated
+  confirmation number and personalized thank-you (name + email from state).
+- **AC-S-3** Given an invalid submit, When it runs, Then no success screen; error navigation offered.
+- **AC-S-4** Given pending fetch/submit, When in-flight, Then no double-submit and no partial state
+  corruption.
+
+| AC  | Test                                                                                    | Kind     |
+| --- | --------------------------------------------------------------------------------------- | -------- |
+| S-1 | `facade.test.js` → "fetchSessions/fetchAddons resolve async" + `Wizard.spec.js` loading | PF + SFC |
+| S-2 | `StepReview.spec.js` → "success screen w/ confirmation # + dynamic name/email"          | SFC      |
+| S-3 | `StepReview.spec.js` → "no success on invalid submit"                                   | SFC      |
+| S-4 | `StepReview.spec.js` → "double-submit guarded during pending"                           | SFC      |
+
+---
+
+## 6. Task checklist (Phase 2–4)
+
+Each task names the spec rule / decision it satisfies. Checked as completed with its commit.
+
+### Phase 2 — Foundation
+
+- [ ] `feat(data)` JSDoc typedefs + mock normalizers; **async facade** (D1). Parse ISO once at the edge.
+- [ ] `feat(utils)` currency formatter (D5) + wall-clock date-range & day-key helpers (D4).
+- [ ] `feat(logic)` pure interval-overlap + conflict detection (D6) — derived from data, not the file.
+- [ ] `test(logic)` overlap edge cases: `s10`+`s11` touch = no conflict; `s4`+`s5`, `s11`+`s12`
+      conflict; `ws1` vs `s10` (no) / `s11` (yes); one containment case (AC-C-*).
+- [ ] `feat(state)` `useRegistration` composable, provide/inject, survives free nav (D2).
+- [ ] `feat(shell)` wizard layout + free-navigation stepper (D13).
+- [ ] `docs(plan)` record state / timezone / stepper decisions.
+
+### Phase 3 — Steps
+
+- [ ] `feat(attendee)` form fields, no inline validation (AC-1.1, AC-1.5); shipping optional here.
+- [ ] `feat(attendee)` ticket cards, prices/perks from data (AC-1.2–1.4).
+- [ ] `feat(sessions)` grouped-by-day, capacity states, remaining spots, track badges (AC-2.*, D12).
+- [ ] `feat(addons)` grouped by category in order Workshops/Meals/Merch (AC-3.1).
+- [ ] `feat(addons)` disable workshops conflicting with selected sessions (AC-3.3–3.5, D9).
+- [ ] `feat(addons)` merch size + quantity, top-level max (AC-3.6–3.8, D16).
+- [ ] `feat(addons)` shipping banner, verbatim copy (AC-3.9–3.10).
+- [ ] `feat(pricing)` `useOrderSummary` computed totals + VIP workshop-only discount (D3, D11, AC-P-*).
+- [ ] `test(pricing)` VIP discount ($14.90/$134.10), quantity totals, ticket-switch recompute (AC-P-*).
+- [ ] `feat(addons)` live order-summary panel (AC-3.11).
+- [ ] `feat(review)` grouped summary + edit navigation, state preserved (AC-4.1, AC-4.3).
+- [ ] `feat(review)` itemized pricing breakdown (AC-4.2).
+- [ ] `feat(validation)` unified submit-time validation: conditional shipping, stale conflicts,
+      lenient phone (D7–D10, AC-V-*, AC-4.4–4.6).
+- [ ] `feat(validation)` step error indicators + jump-to-step; Step 1 error from Step 3 (AC-4.5, D9).
+- [ ] `feat(review)` terminal success screen, "Back to Home" (D15, AC-4.7, AC-S-2).
+- [ ] `docs(plan)` record pricing & validation decisions.
+
+### Phase 4 — Fidelity & polish
+
+- [ ] `style(fidelity)` spacing/typography/interactive states to Figma; `-rest`/`-hover`/`-active`
+      pairs; disabled/error/active; zero hex. (May split into 2–3 area-scoped commits.)
+- [ ] `feat(ux)` micro-interactions + loading/disabled affordances (skeletons off the facade). If
+      Notify/Dialog used, register them in `quasar.config.js` `framework.plugins`.
+- [ ] `feat(responsive)` adapt at `tablet 768` / `desktop 1024`.
+- [ ] `feat(i18n)` extract UI copy behind `vue-i18n` `en` locale (D14).
+
+---
+
+## 7. Spec gaps & Figma-blocked items
+
+Resolve each from the named Figma frame during that step's **Specify** phase; record the resolution
+here. None is silently hardcoded.
+
+| Item                                                                                  | Blocked on                                            | Note                                                                        |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| Track badge styles (main/frontend/backend/devops)                                     | Step 2 frame `1072:912`                               | Map each to a semantic palette; no track token exists.                      |
+| Discount display shape (separate `−$14.90` line vs struck-through per-workshop price) | Step 3 `1149:565` / Step 4 `1074:897`                 | Math is identical (AC-P-2); only the render assertion depends on the shape. |
+| Merch qty + size interaction (one picker + size vs per-size rows summing to max)      | Step 3 `1149:565`                                     | Total-max semantics fixed (D16); interaction shape from Figma.              |
+| `merch4` max-1 control (qty stepper stuck at 1 vs add/remove toggle)                  | Step 3 `1149:565`                                     | AC-3.7.                                                                     |
+| Remaining-spots label ("13 spots left" vs "13/500")                                   | Step 2 `1072:912`                                     | Number tested (AC-2.4); label from Figma.                                   |
+| Success-screen dynamic content (confirmation-number format, exact copy)               | Success `1075:903`                                    | Name/email/event dynamic; 2025/TechConf are placeholders (§4).              |
+| Stepper + step-error-badge visuals                                                    | Wizard shell + `Review – Attendee (Error)` `1076:936` | Free-nav decided (D13); error-badge look from Figma.                        |
+
+---
+
+## 8. Verification & gates
+
+**Definition of done** for any change:
+
+1. **Gates green:** `yarn check` (ESLint + Prettier) and `yarn test:unit:ci` pass.
+2. **Business logic traces to ACs:** every §5 PF/SFC test exists and passes; each maps to a criterion.
+3. **Visual parity:** `agent-browser` drives the app on `:9001` and each step is compared against its
+   Figma frame (§4).
+4. **Manual end-to-end walks:**
+   - **Killer sequence** (AC-P-6): VIP → add `ws1` → Review → Edit → switch to General → the workshop
+     discount vanishes instantly (733.10 → 448.00).
+   - **Stale-conflict walk** (AC-4.6): select `ws1` → back to Step 2 → add `s11` → Submit surfaces a
+     kept-selection conflict naming `s11`, attributed to Step 3.
+   - **Shipping cross-step** (AC-1.6/1.7): add merch → Step 1 shows shipping required → remove merch →
+     requirement clears live.
+5. **Constraints honored:** plain JS only; UnoCSS tokens only (no hex); README unedited; this file
+   kept in sync as tasks complete.
+
+_Toolchain note:_ the repo needs Node 22.17 / yarn 4.6 while the shell defaults to Node 20 / yarn
+1.22 — prefix commands with the nvm + corepack prelude before running `yarn check` / `yarn test:unit`.
