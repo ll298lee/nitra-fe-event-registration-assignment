@@ -198,3 +198,58 @@ entry (the per-commit journaling rule is unchanged); a multi-commit PR just land
 several `##` sections at once. Updated `CLAUDE.md` §1.6/§2.6/§5, the PR template,
 and the §9 review log (now per-PR) to match.
 
+## feat(data): async facade over mocks + JSDoc-typed normalizers
+
+Async facade (`fetchEvent`/`fetchSessions`/`fetchAddons`/`submitRegistration`)
+over the sync mocks so loading/pending states are real and swapping in `fetch()`
+later changes nothing downstream (**D1**). `normalize.js` parses ISO timestamps
+into `Date` `start`/`end` once at the edge, with JSDoc `@typedef`s for the shapes;
+`generateConfirmationNumber` (`WDS-XXXXXXXX`) lives here as the "server"-assigned
+id. Tests: `facade.test.js` → AC-S-1 (async + normalized shape) and the AC-S-2
+confirmation-number primitive.
+
+## feat(utils): currency formatting + wall-clock datetime helpers
+
+Pure rendering primitives (aggregation stays in the later order-summary commit).
+`pricing.js`: `formatCurrency` (Intl en-US/USD, **D5**), `round2`, VIP discount.
+`datetime.js`: wall-clock time/day helpers (**D4**).
+
+Critical decisions:
+
+- **`WORKSHOP_DISCOUNT_RATE = 0.10` (D11)** — derived and named; the mock only has
+  the string "10% off workshops". Discount is VIP-only and, by construction,
+  workshop-only.
+- **Wall-clock via manual UTC formatting, not `Intl.DateTimeFormat` (D4)** — keeps
+  `ws2` (18:30Z) on Nov 15 regardless of viewer offset, and avoids Intl's U+202F
+  space before AM/PM that breaks exact string matches.
+
+Tests cover AC-1.4, AC-P-1/2/5 and AC-2.1/2.5, AC-T-1/2/3.
+
+## feat(logic): capacity + strict-overlap time-conflict detection
+
+`capacity.js`: `isFull` = `registered >= capacity`, `remainingSpots` clamped;
+meals/merch uncapped. `conflicts.js`: `detectConflicts` + `conflictingSessions`.
+
+Critical decisions:
+
+- **Strict-inequality overlap (D6)** — touching endpoints don't conflict, so the
+  14:00Z back-to-back slots (`s10`→`s11`/`ws1`) stay co-selectable.
+- **Capacity ships with conflicts** — the decoy test needs `isFull` to filter the
+  full sessions (`s2`/`s9`) before asserting live conflicts.
+- **Conflict message (AC-C-5) deferred** to the Step 3 i18n commit; this ships the
+  detection data. **Added AC-C-6** for the meals/merch guard.
+
+Tests cover AC-C-1..C-4/C-6 and AC-Cap-1/2/3; numbers re-derived from the mocks by
+an adversarial workflow.
+
+## fix(data): harden the data edge against partial payloads (code-review prep)
+
+The `/code-review` prep pass found no confirmed bugs but four plausible latent
+gaps at the D1 seam (safe vs the mocks, risky once swapped for a real `fetch`).
+Hardened per **D17**: missing `registered` reads as 0 (keeps `isFull`/
+`remainingSpots` consistent instead of `false`/`NaN`); an add-on time slot is
+attached only when both `date` and `endDate` exist (no truthy `Invalid Date` that
+hides conflicts); the confirmation number draws 8 uniform `[A-Z0-9]` chars.
+Deliberately did **not** re-validate in `conflicts` — keeping data honest is the
+edge's job (the normalize-at-the-edge invariant). New tests: `normalize.test.js` +
+a capacity partial-data case.
