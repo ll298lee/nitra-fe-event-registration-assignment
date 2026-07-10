@@ -421,3 +421,16 @@ the global `app.scss` normalize's blast radius is deliberate.
 Tests: `StepAttendee.spec.js` — AC-1.1 (fields + optional shipping), AC-1.2 (single-select +
 roving-tabindex/arrow-key a11y), AC-1.3 (VIP-only workshop perk), AC-1.4 (whole-dollar prices,
 render side), AC-1.5 (no inline errors pre-submit).
+
+## docs: forbid design-narration comments in code (CLAUDE §1.7)
+
+On request, made "comments describe code, not design" a constitution rule: `CLAUDE.md` §1.7 +
+a new anti-pattern bar style/layout/token/Figma/measured-value narration from source — that
+rationale lives only in `IMPLEMENTATION_PLAN.md`. Stripped such comments from the merged
+`WizardStepper.vue` (the new Step 1 components were written comment-light from the start).
+Recorded as **D19**.
+
+**Judgment call:** I kept two terse _behavior_ comments (the badge `invisible` toggle and the
+box-shadow selection ring) — not style narration, but guards against a well-meaning
+"simplify back to `v-if` / a border" refactor that would reintroduce the selection-time
+layout shift the review explicitly asked to fix.

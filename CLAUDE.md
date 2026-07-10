@@ -45,6 +45,15 @@ against those sources.
 6. **Gates are green before "done."** `yarn check` (ESLint + Prettier) and `yarn test:unit`
    must pass, and the UI must match Figma, **and the change's PR must be human-approved and
    merged** (see §2 step 6), before any change is considered complete.
+7. **Comments describe code, not design.** Code comments (`.vue`, `.js`) must **never**
+   restate styling, layout, spacing, colors, tokens, Figma frames/nodes, or measured px
+   values — that design rationale lives **only** in `IMPLEMENTATION_PLAN.md` (§3 decisions,
+   §4 reconciliation), never in the source. The markup + token classes are self-describing;
+   annotating them with "16px → gap-4", "matches Figma frame X", or "teal[700] border" is
+   noise that rots. Reserve code comments for **non-obvious JavaScript/business-logic
+   behavior** the code cannot express itself (e.g. a spec rule, a deliberate workaround, an
+   invariant), and add one only when it is genuinely needed. When in doubt, delete it and let
+   `IMPLEMENTATION_PLAN.md` carry the rationale.
 
 ---
 
@@ -130,6 +139,10 @@ frame in Figma.
   (font size, weight, line-height, spacing, border, radius, color) to a "close enough" token
   without recording it. Match the frame's measured values; where no exact token exists,
   record the discrepancy in `IMPLEMENTATION_PLAN.md` and resolve it deliberately (§1.3, §4).
+- **Style narration in comments** — annotating markup/classes with the Figma values, node
+  ids, tokens, or spacing they implement (e.g. `// 16px → gap-4`, `<!-- matches frame X -->`).
+  Design rationale belongs in `IMPLEMENTATION_PLAN.md`; the code stays comment-free unless a
+  comment clarifies non-obvious JS/business-logic behavior (§1.7).
 
 **Scope changes (spec expansion).** When new requirements or new Figma frames arrive, the
 spec is _growing_, not being corrected — a governed event, not scope creep. Handle it in

@@ -1,21 +1,11 @@
 <script setup>
-// Custom, token-styled progress stepper (IMPLEMENTATION_PLAN.md D13), built to the
-// measured Step 1 / Step 4 Figma values. Presentational: renders `steps` at
-// `current` and emits `select` on click. Free/non-linear navigation — every step is
-// clickable, no validation gate; the parent owns the step change.
-//
-// Figma: circle 32px; current/completed = teal (bg-brand-emphasis-rest) with white
-// 14px semibold number / white check; upcoming = gray[50] (bg-surface-l2) with a
-// 0.4 semibold number. The completed check is Figma's own 2px round-cap/round-join
-// stroked glyph (path M9 16.3667L13.9 21.5L23 10.5), not the Material `check`.
-// Label is 13px/leading-normal (no exact token — arbitrary text-[13px], see §4),
-// weight current=semibold / completed=medium / upcoming=regular; upcoming color 0.4.
-// Connector 2px with a 1px corner radius: teal once the prior step is done, else gray[50].
+// Presentational stepper: renders `steps` at `current` and emits `select` on click.
+// Navigation is free/non-linear — every step is clickable with no validation gate
+// (D13, AC-N-1); the parent owns the step change.
 
 const props = defineProps({
   /** @type {{ key?: string, label: string }[]} */
   steps: { type: Array, required: true },
-  /** Zero-based index of the active step. */
   current: { type: Number, required: true },
 });
 
