@@ -9,7 +9,7 @@
  *
  * Component/SFC testing is also wired up — mount with `@vue/test-utils` and
  * `installQuasarPlugin()` from `@quasar/quasar-app-extension-testing-unit-vitest`.
- * See PLAN.md for a snippet.
+ * See JOURNAL.md for a snippet.
  */
 import { addons } from 'src/mocks/addons.js';
 
