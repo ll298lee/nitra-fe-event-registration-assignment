@@ -6,6 +6,7 @@ import WizardStepper from '../components/wizard/WizardStepper.vue';
 import StepAttendee from '../components/wizard/StepAttendee.vue';
 import StepSessions from '../components/wizard/StepSessions.vue';
 import StepAddons from '../components/wizard/StepAddons.vue';
+import StepReview from '../components/wizard/StepReview.vue';
 
 // Single wizard store provided at the root; steps inject it (D2).
 const { currentStep, goToStep, next, prev, isFirstStep, isLastStep } = provideRegistration();
@@ -67,21 +68,13 @@ function onPrimary() {
     </div>
 
     <main class="flex flex-1 flex-col gap-8 px-30 py-10">
-      <!-- Every step needs a top-level heading. Steps that render their own visible title
-           (Steps 1–3, indices 0–2) keep this h1 screen-reader-only as the landmark heading. -->
-      <h1 class="text-h3 text-neutral" :class="{ 'sr-only': currentStep <= 2 }">
-        {{ currentStepMeta.label }}
-      </h1>
+      <!-- Each step renders its own visible title; this h1 stays screen-reader-only as the
+           page's landmark heading (the stepper label). -->
+      <h1 class="sr-only">{{ currentStepMeta.label }}</h1>
       <StepAttendee v-if="currentStep === 0" />
       <StepSessions v-else-if="currentStep === 1" />
       <StepAddons v-else-if="currentStep === 2" />
-      <div
-        v-else
-        class="rounded-md border border-solid border-neutral-muted bg-surface-l1 p-5 text-neutral-muted"
-      >
-        Step {{ currentStep + 1 }} of {{ STEPS.length }} — the “{{ currentStepMeta.label }}” form is
-        implemented in a later PR.
-      </div>
+      <StepReview v-else />
     </main>
 
     <footer

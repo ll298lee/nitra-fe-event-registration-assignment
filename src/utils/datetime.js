@@ -76,6 +76,16 @@ export function formatDateTimeRange(start, end) {
 }
 
 /**
+ * Wall-clock date + single time `MMM D, h:mm AM/PM` (e.g. `Nov 15, 9:00 AM`), used for
+ * the Step 4 review summary where a session is shown by its start time only (no range).
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDateTime(date) {
+  return `${formatDayLabel(date)}, ${formatTime(date)}`;
+}
+
+/**
  * Wall-clock day key `YYYY-MM-DD`, used to group sessions by day.
  * Reads UTC fields so the grouping never shifts across the local-midnight boundary.
  * @param {Date} date

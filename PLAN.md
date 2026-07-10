@@ -622,3 +622,37 @@ Judgment calls (flagged for review):
   behind `vue-i18n` in Phase 4 (D14) — the whole app currently inlines copy.
 - **`validateAll` is pure and never mutates** the registration, so a stale conflict is reported and
   kept, not auto-removed (D10, AC-4.6).
+
+## feat(review): step 4 review summary + itemized pricing
+
+Step 4 PR 2 (of ~4, D34). Built the read-only **Review** UI that replaces the shell's Step-4
+placeholder: a single-column stack of summary cards (Attendee Information / Selected Sessions /
+Add-ons) plus an itemized `PricingSummaryCard`, each summary card carrying an **Edit → Step N** link
+that jumps back with all state preserved (AC-4.1/4.2/4.3). New components `StepReview.vue`,
+`ReviewSection.vue`, `PricingSummaryCard.vue`; a `formatDateTime` helper (wall-clock date + start
+time); `StepReview` wired into `IndexPage`. Pricing reuses the existing `useOrderSummary` engine
+(D26). Measured pixel-parity vs frame `1074:897` via `agent-browser` (`getComputedStyle`); recorded
+as **D35**. 148 tests green, `yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **No aggregate "Subtotal" row** — the frame shows line items → discount → Grand Total only (two
+  independent Dev Mode extractions agree). README §4.2 "subtotals" is read as the **per-line**
+  amounts; a one-line add-back if the reviewer wants an explicit pre-discount subtotal (D35b).
+- **Edit-link colour #3a7679 (teal[500]) has no semantic _text_ token** → mapped to the nearest,
+  `text-brand` (#2e5e60), a recorded 1-shade approximation; the Figma variable is mislabeled
+  `components/button/primary-link/text/rest` (D35c).
+- **Add-ons/merch summary is a spec-gap fill** (frame proves only the workshop case): a category
+  label with `{name} ($price)`, merch appending `, {size} × {qty}` (D35e). Pricing line labels
+  **omit "× 1"** (show "× n" only when qty>1, D35f) — deliberately unlike the Step-3 running total.
+- **Shipping Address is a conditional 7th attendee row**, shown only when non-empty (the frame's
+  6-row sample has none), so the summary is complete when the user provided one (D35g).
+- **Shell `<h1>` is now sr-only on all four steps** — each step owns its visible title; the stepper
+  label stays the accessible landmark (it was visible only on Step 4, rendering the short "Review").
+
+Tests: `StepReview.spec.js` — four sections render (AC-4.1); attendee/ticket/session/add-on rows;
+merch size+qty; the two independent merch-summary conditionals (sizeless item, no "× 1" at qty 1,
+D35e); the conditional Shipping Address row present/absent (D35g); itemized pricing with the VIP
+discount + Grand Total + no-subtotal (AC-4.2); non-VIP no discount; Edit → `goToStep` with state
+preserved (AC-4.3); empty states incl. the pricing card's own empty state and the em-dash ticket
+fallback. `datetime.test.js` — `formatDateTime` wall-clock (no viewer-offset shift).
