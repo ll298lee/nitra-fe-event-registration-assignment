@@ -893,3 +893,22 @@ reserves the gutter, so the content width is constant across steps.
 .scrollbarGutter === 'stable'` (rule applied to the real scroll container) and that all four
   steps still render/navigate with no console errors. The shift-on-classic-scrollbars behavior is
   reasoned from the CSS spec.
+
+## feat(ux): skeleton loaders replace the bare spinner in Steps 1–3
+
+Second UX-polish commit (D43b). Steps 1–3 gate their content on a `loading` ref off the async
+facade (250 ms simulated latency, so the state is observable). Each loading branch swapped its
+lone centered `q-spinner` for content-shaped placeholders, so first paint shows structure instead
+of a spinner and there is no jump when the data resolves.
+
+- **One reusable `CardSkeleton.vue`** — a card-shaped placeholder (bordered `rounded-md` box, a
+  title/price bar row + N `q-skeleton` text lines via a `lines` prop), built on Quasar's built-in
+  `QSkeleton` (auto-registered, like `QSpinner`). Reused across all three steps.
+- **Shaped to each step:** Step 1 → three skeleton cards in the ticket grid (the form below always
+  renders); Step 2 → a tab-strip bar + counter line + a 2-col card grid; Step 3 → the two-column
+  layout (title + tabs + card list on the left, a taller summary skeleton in the 380 px sidebar).
+- **Tests:** each step spec gains a loading assertion — mount **without** flushing the facade
+  promise → `.q-skeleton` present and content absent; after `flushPromises()` → skeletons gone and
+  content rendered. 195 tests green (+3).
+- **Verified visually** (`agent-browser`, latency temporarily raised then reverted): Step 1 shows 15
+  skeleton bars shaped like the ticket cards, clearing to the real cards on resolve.

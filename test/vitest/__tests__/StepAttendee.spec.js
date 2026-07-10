@@ -167,4 +167,16 @@ describe('StepAttendee (Step 1 — submit-time validation, D36)', () => {
     expect(shippingLabel(wrapper).text()).toContain('(Optional)');
     expect(shippingLabel(wrapper).text()).not.toContain('Shipping Address *');
   });
+
+  // D43(b) — while the event loads, content-shaped skeletons stand in for the ticket grid;
+  // they clear once the ticket cards render.
+  it('shows card skeletons while the event loads, then the ticket cards', async () => {
+    const wrapper = mount(Harness); // do NOT flush — assert the loading branch first
+    expect(wrapper.findAll('.q-skeleton').length).toBeGreaterThan(0);
+    expect(cards(wrapper)).toHaveLength(0);
+
+    await flushPromises();
+    expect(wrapper.findAll('.q-skeleton')).toHaveLength(0);
+    expect(cards(wrapper)).toHaveLength(3);
+  });
 });

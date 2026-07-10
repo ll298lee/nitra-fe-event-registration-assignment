@@ -4,6 +4,7 @@ import { fetchSessions } from '../../data/facade.js';
 import { useRegistration } from '../../composables/useRegistration.js';
 import { dayGroupKey, formatDayLabel } from '../../utils/datetime.js';
 import SessionCard from './SessionCard.vue';
+import CardSkeleton from './CardSkeleton.vue';
 
 // Step 2 — Session Selection. Sessions are organized by day into a segmented day switcher
 // (D23); free multi-select with conflict validation deferred to Step 4 (README §Step 2, D24).
@@ -73,8 +74,12 @@ function onTabKeydown(e) {
   <div class="flex flex-col gap-6">
     <h2 class="text-h3 text-neutral">Select Sessions</h2>
 
-    <div v-if="loading" class="flex justify-center py-10">
-      <q-spinner size="32px" class="text-brand-emphasis" />
+    <div v-if="loading" class="flex flex-col gap-6" aria-hidden="true">
+      <q-skeleton width="176px" height="40px" class="rounded-[10px]" />
+      <q-skeleton type="text" width="140px" />
+      <div class="grid grid-cols-2 gap-4">
+        <CardSkeleton v-for="n in 4" :key="n" :lines="2" />
+      </div>
     </div>
 
     <template v-else>

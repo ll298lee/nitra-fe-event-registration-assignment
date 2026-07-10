@@ -324,4 +324,15 @@ describe('StepAddons (Step 3 — Meal Packages)', () => {
     await cardByName(w, 'Premium Dinner — Day 1 Networking Event').trigger('click');
     expect(store.selectedMealIds.value).toEqual(['meal1', 'meal2']);
   });
+
+  // D43(b) — skeletons (list + summary sidebar) stand in while add-ons load, then clear.
+  it('shows skeletons while add-ons load, then the add-on content', async () => {
+    const w = mount(Harness); // do NOT flush — assert the loading branch first
+    expect(w.findAll('.q-skeleton').length).toBeGreaterThan(0);
+    expect(tabs(w)).toHaveLength(0);
+
+    await flushPromises();
+    expect(w.findAll('.q-skeleton')).toHaveLength(0);
+    expect(tabs(w)).toHaveLength(3);
+  });
 });
