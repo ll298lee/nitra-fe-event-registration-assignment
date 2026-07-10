@@ -601,3 +601,24 @@ built, at Step 4 submit (AC-4.6). A non-blocking Step 2 indicator was considered
 gating Step 2 or auto-removing the workshop were rejected as README §2.2 / D10 violations. No code
 change — **AC-4.6 (pending validation PR) is the closing mechanism**; the current "nothing happens"
 is only because that Step 4 validation isn't built yet.
+
+## feat(validation): pure submit-time validation logic
+
+Step 4 PR 1 (of ~4 — the pure-logic-first split recorded as **D34**). Added `src/logic/validation.js`:
+lenient field predicates (`isValidEmail`, `isValidPhone`, `isPresent`, `hasMerchSelected`),
+`validateAttendee` (required-then-format; shipping conditional on merch), the conflict-error helpers
+(reusing `conflicts.js`), and `validateAll` → a per-step error map (`attendee`/`sessions`/`addons`)
+plus `errorStepKeys`/`isValid`. Framework-free over a plain store snapshot — the reactive
+touched-field wrapper is the later `useValidation` composable. 22 co-located tests; 132 total green,
+`yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **Ticket-required is a spec-gap fill** filed under Step 1 — README's Step-1 fields table omits the
+  ticket, but a ticketless registration is invalid; one-line removal if the reviewer disagrees (D34b).
+- **Session↔session conflicts flag Step 2, workshop↔session flag Step 3** (D9) at submit — satisfies
+  README §2.2 and is consistent with AC-2.6/D33 (those forbid an in-Step-2 gate, not a submit error).
+- **Validation copy lives inline in the logic layer** for now (centralized builders), relocating
+  behind `vue-i18n` in Phase 4 (D14) — the whole app currently inlines copy.
+- **`validateAll` is pure and never mutates** the registration, so a stale conflict is reported and
+  kept, not auto-removed (D10, AC-4.6).
