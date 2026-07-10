@@ -4,6 +4,7 @@ import {
   dayGroupKey,
   formatDayLabel,
   formatDateTimeRange,
+  formatDateTime,
 } from './datetime.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
@@ -66,5 +67,16 @@ describe('formatDateTimeRange — Step 3 workshop date + time (D28)', () => {
   it('prefixes the wall-clock day to the time range', () => {
     expect(formatDateTimeRange(addon.ws1.start, addon.ws1.end)).toBe('Nov 16, 2:00 PM – 5:00 PM');
     expect(formatDateTimeRange(addon.ws2.start, addon.ws2.end)).toBe('Nov 15, 3:30 PM – 6:30 PM');
+  });
+});
+
+describe('formatDateTime — Step 4 review date + start time (D35)', () => {
+  // The review summary shows a session by its wall-clock start only (no range).
+  it('renders "MMM D, h:mm AM/PM" from the start, wall-clock (no local shift)', () => {
+    expect(formatDateTime(session.s1.start)).toBe('Nov 15, 9:00 AM');
+    expect(formatDateTime(session.s4.start)).toBe('Nov 15, 1:00 PM');
+    expect(formatDateTime(session.s6.start)).toBe('Nov 15, 3:30 PM');
+    // ws2 (18:30Z) stays on Nov 15 — a +8 local offset would read Nov 16.
+    expect(formatDateTime(addon.ws2.start)).toBe('Nov 15, 3:30 PM');
   });
 });
