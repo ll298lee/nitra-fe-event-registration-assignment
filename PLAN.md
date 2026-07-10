@@ -1100,3 +1100,12 @@ templates, `useI18n({useScope:'global'})` in scripts).
   node ` ` immediately precedes an interpolation, so `<span> {{ $t('field.optional') }}</span>`
   rendered `Shipping Address(Optional)` (no space); fixed by folding the space into the expression:
   `{{ ' ' + $t('field.optional') }}`.
+
+## docs(plan): reconcile review log (#22–#24), close out Phase 4
+
+Plan hygiene, no code change. The §9 review log had drifted behind the last three merges — added rows
+for **#22** (Phase-4 checklist/log reconcile), **#23** (`feat(responsive)`), and **#24**
+(`feat(i18n)`). With #24 merged, **every §6 checklist item is now ticked** — the 4-step wizard is
+feature-complete (Steps 1–4 + success, pricing/validation logic, fidelity/UX/responsive polish, and
+i18n). This PR's own number is recorded in §9 on merge-confirmation (force-push is blocked, so it
+isn't back-filled into a feature commit).
