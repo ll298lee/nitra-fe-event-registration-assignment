@@ -40,8 +40,8 @@ against those sources.
    `bg-surface-l1`, `border-neutral-muted`, `text-h3`). No raw color/typography literals.
 5. **`IMPLEMENTATION_PLAN.md` is the living plan.** The plan, design/dependency decisions,
    and the acceptance-criteria→test map live there and are kept up to date as you work.
-   (This is distinct from the submission `PLAN.md` referenced by `README.md` §Submission —
-   do not conflate the two.)
+   (This is distinct from both the per-commit `JOURNAL.md` journal (§5) and the submission
+   `PLAN.md` referenced by `README.md` §Submission — three documents; do not conflate them.)
 6. **Gates are green before "done."** `yarn check` (ESLint + Prettier) and `yarn test:unit`
    must pass, and the UI must match Figma, **and the change's PR must be human-approved and
    merged** (see §2 step 6), before any change is considered complete.
@@ -92,7 +92,7 @@ frame in Figma.
    the side of smaller. (Soft proxy, not a hard limit: often a few hundred lines of
    substantive diff.)
    - Work lives on a **branch**, never committed directly to `main`. Each commit carries
-     its matching `PLAN.md` journal entry (§5) — a commit without one is not review-ready.
+     its matching `JOURNAL.md` journal entry (§5) — a commit without one is not review-ready.
    - Open a PR against `main` with `gh pr create` (one coherent theme; multiple commits are
      fine). The
      description links the `README.md` rule(s) and Figma frame(s) implemented, the
@@ -240,9 +240,10 @@ desktop server is unavailable — reach for it only if `figma-dev-mode-mcp-serve
   spec area (e.g. `feat: step 3 add-ons running total`). Keep commits **small and atomic** —
   they're the building blocks of a PR, but the **PR is the unit of human review** (§2.6),
   sized to ~20 min of senior review.
-- **`PLAN.md` journal (per commit):** every commit **must also add or update a matching
-  `##` section in `PLAN.md`** — the submission narrative (§1.5; distinct from
-  `IMPLEMENTATION_PLAN.md`, do not conflate). `PLAN.md` mirrors the commit history one
+- **`JOURNAL.md` journal (per commit):** every commit **must also add or update a matching
+  `##` section in `JOURNAL.md`** — the per-commit development log, renamed from the
+  original `PLAN.md` journal (§1.5; distinct from `IMPLEMENTATION_PLAN.md` and from the
+  submission `PLAN.md`, do not conflate). `JOURNAL.md` mirrors the commit history one
   `##` section per commit, in order. Keep the existing convention and format:
   - the `##` heading is the commit's conventional-commit subject (e.g.
     `## feat: step 3 add-ons running total`);
