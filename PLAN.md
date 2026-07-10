@@ -1014,3 +1014,20 @@ verification; the rest are flagged in the PR as pre-existing/unreachable or deli
   `IndexPage` `<style>`.
 
 196 tests green; no console errors across a full step walk.
+
+## docs(plan): reconcile Phase-4 checklist + review log (no code change)
+
+Post-merge bookkeeping only — no code, tests, or decisions changed. `IMPLEMENTATION_PLAN.md` had
+drifted after PRs #20 and #21 merged.
+
+- **Ticked `feat(ux)`** (§6 Phase 4): delivered wholesale by PR #21 (D43) — skeletons on all four
+  steps, step/stepper/validation micro-interactions, disabled-state transitions. Its "register
+  Notify/Dialog" clause is **N/A** (none are used; `framework.plugins` stays `[]`).
+- **Ticked `style(fidelity)`** (§6 Phase 4), annotated: no dedicated re-audit commit ever ran —
+  Figma parity + token colors were verified **incrementally per step-PR** (D28/D32/D35/D40) and the
+  `-rest/-hover/-active` + disabled/error/active interactive states landed in PR #21. Noted the one
+  honest caveat: zero-hex holds for the palette, but the card drop-shadows use `rgba()` literals.
+- **Left `feat(responsive)` and `feat(i18n)` unchecked** — these are the only genuinely-unstarted
+  Phase-4 items.
+- **Added the missing PR #20 and #21 rows** to the §9 review log (it had stopped at #19; a PR can't
+  log its own merge, so both were absent).

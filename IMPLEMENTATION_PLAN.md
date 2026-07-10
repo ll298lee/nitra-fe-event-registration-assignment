@@ -726,10 +726,16 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 
 ### Phase 4 — Fidelity & polish
 
-- [ ] `style(fidelity)` spacing/typography/interactive states to Figma; `-rest`/`-hover`/`-active`
-      pairs; disabled/error/active; zero hex. (May split into 2–3 area-scoped commits.)
-- [ ] `feat(ux)` micro-interactions + loading/disabled affordances (skeletons off the facade). If
-      Notify/Dialog used, register them in `quasar.config.js` `framework.plugins`.
+- [x] `style(fidelity)` spacing/typography/interactive states to Figma; `-rest`/`-hover`/`-active`
+      pairs; disabled/error/active; zero hex. _(No dedicated re-audit commit — Figma parity + token
+      colors were verified **incrementally per step-PR** (in-browser `getComputedStyle` @1440px,
+      D28/D32/D35/D40), and the `-rest`/`-hover`/`-active` + disabled/error/active interactive states
+      landed in **PR #21** (D43). Zero-hex holds for the palette; card drop-shadows use `rgba()`
+      literals — a pre-existing shadow pattern, not a color token.)_
+- [x] `feat(ux)` micro-interactions + loading/disabled affordances (skeletons off the facade).
+      _(Done in **PR #21** (D43): `CardSkeleton` on all four steps, step/stepper/validation
+      micro-interactions, disabled-state transitions. The Notify/Dialog clause is **N/A** — none are
+      used, so `framework.plugins` stays `[]`.)_
 - [ ] `feat(responsive)` adapt at `tablet 768` / `desktop 1024`.
 - [ ] `feat(i18n)` extract UI copy behind `vue-i18n` `en` locale (D14).
 
@@ -806,3 +812,5 @@ agent never self-approves.
 | [#17](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/17) | `feat/step-4-submit-validation` — Step 4 PR 3: submit-time validation wiring — `useValidation` composable (submitted-gated live errors, reward-early/punish-late) + submit gate + Review error display (red section cards + "— (required)" markers + conflict rows, frame `1076:936`) + Step-1 `FormField` errors + error navigation via Edit links; **+ D37** stepper error indicator (red "!" step) + "Please fix the following errors" banner + disabled Submit (frame `1076:904`) (D36/D37; AC-4.4/4.5/4.6/4.9, AC-V-5, AC-1.6/1.7, AC-C-5) | ll298lee | **Merged** (2026-07-10) |
 | [#18](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/18) | `feat/step-4-success-screen` — Step 4 PR 4 (final): async `submitRegistration` + pending state + double-submit guard + terminal `SuccessScreen` ("Back to Home" resets to pristine Step 1), frame `1075:903` (D40; AC-4.7/4.8, AC-S-2/S-4)                                                                                                                                                                                                                                                                                                      | ll298lee | **Merged** (2026-07-10) |
 | [#19](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/19) | `feat/step-3-meal-packages` — Step 3 Meal Packages: `MealCard` reusing the `WorkshopCard` toggle treatment minus time/capacity/conflict rows (D31a/D41); + `fix(pricing)` whole-dollar prices drop `.00` unless genuinely fractional (D42, supersedes D5) (D41/D42; AC-3.12/3.13, AC-P-\*)                                                                                                                                                                                                                                                      | ll298lee | **Merged** (2026-07-10) |
+| [#20](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/20) | `docs/plan-sync-pricing-validation` — plan hygiene (no code): tick the `docs(plan)` Phase-3 task (pricing/validation decisions landed inline) + add the missing PR #19 row to this log                                                                                                                                                                                                                                                                                                                                                          | ll298lee | **Merged** (2026-07-10) |
+| [#21](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/21) | `feat/ux-polish` — Phase-4 UX polish (D43): stable scrollbar gutter, skeleton loaders (all 4 steps) + memoized fetches, step-change fade, stepper navigation feel + keyboard focus ring, validation error experience (scroll-to-error + focus + animated banner/borders), disabled-state transitions, ticket-card cursor fix                                                                                                                                                                                                                    | ll298lee | **Merged** (2026-07-10) |
