@@ -942,3 +942,13 @@ control, so its state changes and keyboard affordance were polished.
 - **Verified in-browser** (`agent-browser`): circle/connector `transition-duration` = 0.15 s;
   Tab focuses a step button (`:focus-visible` matches) and the circle's computed box-shadow shows
   the white-gap + teal ring (`rgb(255,255,255) … 2px, rgb(38,77,79) … 4px`).
+
+## fix(ux): pointer cursor on ticket-type cards
+
+User-reported: the Step-1 ticket cards showed the default arrow cursor on hover. They are
+`<button>` elements, and the UA stylesheet defaults `<button>` to `cursor: default` (not
+`pointer`) — and this project ships no CSS reset, so nothing corrected it. Added `cursor-pointer`
+to the card's class. An audit of the other selectable cards (`SessionCard`, `WorkshopCard`,
+`MealCard`, `MerchCard`) confirmed they already set `cursor-pointer` — `TicketCard` was the lone
+omission, so the affordance is now consistent across all cards. Verified in-browser: all three
+ticket cards compute `cursor: pointer`.
