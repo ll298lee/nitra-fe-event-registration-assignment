@@ -4,6 +4,7 @@ import { fetchEvent } from '../data/facade.js';
 import { provideRegistration, STEPS } from '../composables/useRegistration.js';
 import WizardStepper from '../components/wizard/WizardStepper.vue';
 import StepAttendee from '../components/wizard/StepAttendee.vue';
+import StepSessions from '../components/wizard/StepSessions.vue';
 
 // Single wizard store provided at the root; steps inject it (D2).
 const { currentStep, goToStep, next, prev, isFirstStep, isLastStep } = provideRegistration();
@@ -65,12 +66,13 @@ function onPrimary() {
     </div>
 
     <main class="flex flex-1 flex-col gap-8 px-30 py-10">
-      <!-- Every step needs a top-level heading. Step 1's own content supplies the visible
-           section headings and the frame shows no page title, so its h1 is screen-reader-only. -->
-      <h1 class="text-h3 text-neutral" :class="{ 'sr-only': currentStep === 0 }">
+      <!-- Every step needs a top-level heading. Steps that render their own visible title
+           (Steps 1 & 2) keep this h1 screen-reader-only as the landmark heading. -->
+      <h1 class="text-h3 text-neutral" :class="{ 'sr-only': currentStep <= 1 }">
         {{ currentStepMeta.label }}
       </h1>
       <StepAttendee v-if="currentStep === 0" />
+      <StepSessions v-else-if="currentStep === 1" />
       <div
         v-else
         class="rounded-md border border-solid border-neutral-muted bg-surface-l1 p-5 text-neutral-muted"

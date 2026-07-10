@@ -25,3 +25,15 @@ export function remainingSpots(item) {
   if (item.capacity == null) return null;
   return Math.max(0, item.capacity - (item.registered ?? 0));
 }
+
+/**
+ * Fraction of capacity filled, clamped to `[0, 1]`. Uncapped items (no `capacity`)
+ * report 0. Shares the same null/zero handling as `isFull`/`remainingSpots` so the
+ * capacity bar can never disagree with the spots label.
+ * @param {{ capacity?: number, registered?: number }} item
+ * @returns {number}
+ */
+export function fillFraction(item) {
+  if (item.capacity == null || item.capacity === 0) return 0;
+  return Math.min(1, (item.registered ?? 0) / item.capacity);
+}

@@ -1,4 +1,4 @@
-import { formatTime, formatTimeRange, dayGroupKey } from './datetime.js';
+import { formatTime, formatTimeRange, dayGroupKey, formatDayLabel } from './datetime.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
 import { addons as rawAddons } from '../mocks/addons.js';
@@ -39,5 +39,18 @@ describe('dayGroupKey — wall-clock (D4)', () => {
     expect(dayGroupKey(addon.ws2.start)).toBe('2028-11-15');
     expect(dayGroupKey(addon.ws2.end)).toBe('2028-11-15');
     expect(formatTimeRange(addon.ws2.start, addon.ws2.end)).toBe('3:30 PM – 6:30 PM');
+  });
+});
+
+describe('formatDayLabel — wall-clock day tab label (D4)', () => {
+  // AC-2.1 — the two day groups label as "Nov 15" / "Nov 16" (frame's tab copy).
+  it('labels s1 → "Nov 15" and s7 → "Nov 16"', () => {
+    expect(formatDayLabel(session.s1.start)).toBe('Nov 15');
+    expect(formatDayLabel(session.s7.start)).toBe('Nov 16');
+  });
+
+  // AC-T-1 — ws2 (18:30Z) labels Nov 15; a +8 local offset would read Nov 16.
+  it('reads UTC fields so no local shift (ws2 18:30Z → Nov 15)', () => {
+    expect(formatDayLabel(addon.ws2.start)).toBe('Nov 15');
   });
 });
