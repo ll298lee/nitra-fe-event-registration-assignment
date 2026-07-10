@@ -5,6 +5,7 @@ import { useRegistration } from '../../composables/useRegistration.js';
 import { useValidation } from '../../composables/useValidation.js';
 import { hasMerchSelected } from '../../logic/validation.js';
 import TicketCard from './TicketCard.vue';
+import CardSkeleton from './CardSkeleton.vue';
 import FormField from './FormField.vue';
 
 // Step 1 — Attendee Info. Ticket type + attendee form. Validation is deferred to the Step 4
@@ -70,8 +71,8 @@ function onKeydown(e) {
     <section class="flex flex-col gap-4">
       <h2 class="text-subtitle1 text-neutral">Select Ticket Type</h2>
 
-      <div v-if="loadingEvent" class="flex justify-center py-10">
-        <q-spinner size="32px" class="text-brand-emphasis" />
+      <div v-if="loadingEvent" class="grid grid-cols-3 gap-4">
+        <CardSkeleton v-for="n in 3" :key="n" :lines="3" />
       </div>
 
       <div

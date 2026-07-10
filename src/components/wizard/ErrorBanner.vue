@@ -9,8 +9,9 @@ defineProps({
 
 <template>
   <div
-    class="flex flex-col gap-2 rounded-md border border-solid border-danger-muted bg-danger-muted-rest p-4"
+    class="flex flex-col gap-2 rounded-md border border-solid border-danger-muted bg-danger-muted-rest p-4 focus:outline-none"
     role="alert"
+    tabindex="-1"
   >
     <p class="text-sm font-medium text-danger">Please fix the following errors before submitting</p>
     <ul class="flex flex-col gap-2">

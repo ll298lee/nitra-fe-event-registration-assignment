@@ -45,13 +45,13 @@ function connectorClass(i) {
     <template v-for="(step, i) in steps" :key="step.key ?? i">
       <button
         type="button"
-        class="flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 transition-opacity hover:opacity-70"
+        class="group flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 transition-opacity hover:opacity-70 focus-visible:outline-none"
         :aria-current="i === current ? 'step' : undefined"
         :aria-invalid="isError(step) || undefined"
         @click="emit('select', i)"
       >
         <span
-          class="text-md flex h-8 w-8 items-center justify-center rounded-full font-semibold"
+          class="text-md flex h-8 w-8 items-center justify-center rounded-full font-semibold transition-colors group-focus-visible:shadow-[0_0_0_2px_var(--bg-surface-l0),0_0_0_4px_var(--border-brand-emphasis)]"
           :class="circleClass(step, i)"
         >
           <svg
@@ -81,14 +81,14 @@ function connectorClass(i) {
           </svg>
           <span v-else>{{ i + 1 }}</span>
         </span>
-        <span class="text-[13px] leading-[normal]" :class="labelClass(step, i)">{{
+        <span class="text-[13px] leading-[normal] transition-colors" :class="labelClass(step, i)">{{
           step.label
         }}</span>
       </button>
 
       <span
         v-if="i < steps.length - 1"
-        class="mx-4 h-0.5 flex-1 rounded-[1px]"
+        class="mx-4 h-0.5 flex-1 rounded-[1px] transition-colors"
         :class="connectorClass(i)"
         aria-hidden="true"
       />

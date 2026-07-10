@@ -9,6 +9,7 @@ import MealCard from './MealCard.vue';
 import MerchCard from './MerchCard.vue';
 import ShippingBanner from './ShippingBanner.vue';
 import OrderSummaryPanel from './OrderSummaryPanel.vue';
+import CardSkeleton from './CardSkeleton.vue';
 
 // Step 3 — Add-ons. Add-ons are grouped by category into a segmented tab control (D27);
 // all three tabs (Workshops / Meal Packages / Merchandise) + the live order-summary
@@ -145,8 +146,17 @@ function onTabKeydown(e) {
 
 <template>
   <div>
-    <div v-if="loading" class="flex justify-center py-10">
-      <q-spinner size="32px" class="text-brand-emphasis" />
+    <div v-if="loading" class="flex items-start gap-8" aria-hidden="true">
+      <div class="flex flex-1 flex-col gap-6">
+        <q-skeleton type="text" width="200px" height="28px" />
+        <q-skeleton width="320px" height="40px" class="rounded-[10px]" />
+        <div class="flex flex-col gap-4">
+          <CardSkeleton v-for="n in 3" :key="n" :lines="2" />
+        </div>
+      </div>
+      <aside class="w-[380px] shrink-0">
+        <CardSkeleton :lines="6" />
+      </aside>
     </div>
 
     <div v-else class="flex items-start gap-8">

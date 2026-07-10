@@ -80,7 +80,7 @@ function onSizeChange(e) {
         >
           <svg
             viewBox="0 0 12 2"
-            class="w-3"
+            class="w-3 transition-colors"
             :class="atMin ? 'text-neutral-disabled' : 'text-neutral'"
             fill="currentColor"
             aria-hidden="true"
@@ -103,7 +103,7 @@ function onSizeChange(e) {
         >
           <svg
             viewBox="0 0 12 12"
-            class="h-3 w-3"
+            class="h-3 w-3 transition-colors"
             :class="atMax ? 'text-neutral-disabled' : 'text-neutral'"
             fill="currentColor"
             aria-hidden="true"

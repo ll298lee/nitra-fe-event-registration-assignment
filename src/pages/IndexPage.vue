@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { fetchEvent, fetchSessions, fetchAddons, submitRegistration } from '../data/facade.js';
 import { provideRegistration, STEPS } from '../composables/useRegistration.js';
 import { provideValidation } from '../composables/useValidation.js';
@@ -94,6 +94,20 @@ function buildSnapshot() {
   };
 }
 
+// After a failed submit, take the user to the errors: the submit button lives in the footer, but
+// the error banner + flagged sections are at the top of the review. Scroll the banner into view and
+// move focus to it (its role="alert" also announces) so the failure is never missed. preventScroll
+// keeps focus from cancelling the smooth scroll; reduced-motion users get an instant jump.
+function revealErrors() {
+  nextTick(() => {
+    const el = document.querySelector('[role="alert"]');
+    if (!el) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
+    el.focus({ preventScroll: true });
+  });
+}
+
 async function onPrimary() {
   if (!isLastStep.value) {
     next();
@@ -103,7 +117,10 @@ async function onPrimary() {
   if (isSubmitting.value) return;
   // Unified submit-time validation (README §4.4): a failed submit reveals the per-step errors on
   // the review and never reaches the network.
-  if (!attemptSubmit()) return;
+  if (!attemptSubmit()) {
+    revealErrors();
+    return;
+  }
 
   isSubmitting.value = true;
   try {
@@ -173,10 +190,12 @@ function onBackToHome() {
         <!-- Each step renders its own visible title; this h1 stays screen-reader-only as the
              page's landmark heading (the stepper label). -->
         <h1 class="sr-only">{{ currentStepMeta.label }}</h1>
-        <StepAttendee v-if="currentStep === 0" />
-        <StepSessions v-else-if="currentStep === 1" />
-        <StepAddons v-else-if="currentStep === 2" />
-        <StepReview v-else />
+        <Transition name="step" mode="out-in">
+          <StepAttendee v-if="currentStep === 0" />
+          <StepSessions v-else-if="currentStep === 1" />
+          <StepAddons v-else-if="currentStep === 2" />
+          <StepReview v-else />
+        </Transition>
       </main>
 
       <footer
@@ -193,7 +212,7 @@ function onBackToHome() {
         </button>
         <button
           type="button"
-          class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active disabled:cursor-not-allowed disabled:!opacity-50"
+          class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-[color,background-color,opacity] hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active disabled:cursor-not-allowed disabled:!opacity-50"
           :class="primaryClass"
           :disabled="submitDisabled"
           @click="onPrimary"

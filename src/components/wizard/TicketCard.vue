@@ -19,7 +19,7 @@ defineEmits(['select']);
     role="radio"
     :aria-checked="selected"
     :tabindex="tabindex"
-    class="flex w-full flex-col gap-3 rounded-md border-0 p-5 text-left transition-colors"
+    class="flex w-full cursor-pointer flex-col gap-3 rounded-md border-0 p-5 text-left transition-colors"
     :class="
       selected
         ? 'bg-brand-subtle-rest shadow-[inset_0_0_0_2px_var(--border-brand-emphasis),0px_4px_16px_0px_rgba(0,0,0,0.08),0px_1px_3px_0px_rgba(0,0,0,0.04)]'

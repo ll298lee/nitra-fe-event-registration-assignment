@@ -872,3 +872,145 @@ changed (still 192 green).
   silently checking it.
 - **Added the missing PR #19 row** to the §9 review log (meal packages + whole-dollar-price fix,
   merged `9a5f90c`, carrying D41/D42). The log had stopped at #18 while #19 was already merged.
+
+## fix(ux): stable scrollbar gutter — no horizontal shift between steps
+
+First of three atomic commits in the Phase-4 UX-polish PR (D43). The wizard scrolls at the
+**document** level (`App.vue` → `router-view` → `IndexPage`'s `min-h-screen` div — no Quasar
+`QLayout`), so a tall step (Add-ons, Review) gains a viewport scrollbar while a short step does
+not. On platforms with classic, space-reserving scrollbars that width difference shifts the whole
+centered layout horizontally as you move between steps — the issue the user reported.
+
+Fix: one global rule in `src/css/app.scss` — `html { scrollbar-gutter: stable }` — which always
+reserves the gutter, so the content width is constant across steps.
+
+- **Why `scrollbar-gutter: stable`, not `overflow-y: scroll`.** `overflow-y: scroll` also fixes the
+  shift but paints a permanent, empty scrollbar track on short steps; `stable` reserves the space
+  without a visible track. On overlay-scrollbar platforms (macOS default) scrollbars consume no
+  space, so the property is a harmless no-op — correct, since those platforms never show the shift.
+- **Verification caveat.** Headless Chromium uses overlay scrollbars, so the shift can't be
+  reproduced in `agent-browser`. Verified instead that `getComputedStyle(documentElement)
+.scrollbarGutter === 'stable'` (rule applied to the real scroll container) and that all four
+  steps still render/navigate with no console errors. The shift-on-classic-scrollbars behavior is
+  reasoned from the CSS spec.
+
+## feat(ux): skeleton loaders replace the bare spinner in Steps 1–3
+
+Second UX-polish commit (D43b). Steps 1–3 gate their content on a `loading` ref off the async
+facade (250 ms simulated latency, so the state is observable). Each loading branch swapped its
+lone centered `q-spinner` for content-shaped placeholders, so first paint shows structure instead
+of a spinner and there is no jump when the data resolves.
+
+- **One reusable `CardSkeleton.vue`** — a card-shaped placeholder (bordered `rounded-md` box, a
+  title/price bar row + N `q-skeleton` text lines via a `lines` prop), built on Quasar's built-in
+  `QSkeleton` (auto-registered, like `QSpinner`). Reused across all three steps.
+- **Shaped to each step:** Step 1 → three skeleton cards in the ticket grid (the form below always
+  renders); Step 2 → a tab-strip bar + counter line + a 2-col card grid; Step 3 → the two-column
+  layout (title + tabs + card list on the left, a taller summary skeleton in the 380 px sidebar).
+- **Tests:** each step spec gains a loading assertion — mount **without** flushing the facade
+  promise → `.q-skeleton` present and content absent; after `flushPromises()` → skeletons gone and
+  content rendered. 195 tests green (+3).
+- **Verified visually** (`agent-browser`, latency temporarily raised then reverted): Step 1 shows 15
+  skeleton bars shaped like the ticket cards, clearing to the real cards on resolve.
+
+## feat(ux): fade transition on wizard step change
+
+Third UX-polish commit (D43c). Wrapped the `v-if`/`v-else-if` step swap in `IndexPage`'s `<main>`
+in `<Transition name="step" mode="out-in">` — a 150 ms opacity + 4 px `translateY` fade replacing
+the hard cut, so moving between steps reads as a smooth cross-fade. A `prefers-reduced-motion`
+guard disables the motion for users who ask for less.
+
+- **Non-scoped `<style>` (deliberate).** Vue applies the `step-*` transition classes to the child
+  step's **root** element, which carries the _child component's_ scope attribute — a `scoped` rule
+  in `IndexPage` would not match it. So the classes are global, with unique `step-*` names to avoid
+  clashes.
+- **Verified:** navigation still works through the `<Transition>` wrapper (reached Add-ons/Review),
+  the transition CSS is present, and there is no Vue "single child" warning. 195 tests green.
+
+## feat(ux): stepper navigation feel — animated states + keyboard focus ring
+
+Fourth UX-polish commit (D43d — a user-expansion theme). The stepper is the primary navigation
+control, so its state changes and keyboard affordance were polished.
+
+- **Smooth state transitions.** Added `transition-colors` to the step circle, label, and connector,
+  so completing/entering a step animates (circle fills teal, connector fills, check appears, label
+  darkens) over 150 ms instead of snapping.
+- **Keyboard focus ring.** The step buttons had a hover affordance (`hover:opacity-70`) but no
+  visible keyboard-focus indicator. Added a `group-focus-visible` box-shadow ring on the circle —
+  a 2 px surface gap + a 2 px `--border-brand-emphasis` teal ring — with `focus-visible:outline-none`
+  on the button; it appears only on keyboard focus, not mouse click.
+- **Verified in-browser** (`agent-browser`): circle/connector `transition-duration` = 0.15 s;
+  Tab focuses a step button (`:focus-visible` matches) and the circle's computed box-shadow shows
+  the white-gap + teal ring (`rgb(255,255,255) … 2px, rgb(38,77,79) … 4px`).
+
+## fix(ux): pointer cursor on ticket-type cards
+
+User-reported: the Step-1 ticket cards showed the default arrow cursor on hover. They are
+`<button>` elements, and the UA stylesheet defaults `<button>` to `cursor: default` (not
+`pointer`) — and this project ships no CSS reset, so nothing corrected it. Added `cursor-pointer`
+to the card's class. An audit of the other selectable cards (`SessionCard`, `WorkshopCard`,
+`MealCard`, `MerchCard`) confirmed they already set `cursor-pointer` — `TicketCard` was the lone
+omission, so the affordance is now consistent across all cards. Verified in-browser: all three
+ticket cards compute `cursor: pointer`.
+
+## feat(ux): validation error experience — scroll-to-error, focus, animated appearance
+
+Fifth UX-polish commit (D43e — a user-expansion theme). The submit button lives in the footer at
+the bottom of the review, but the error banner and flagged sections are at the top — so a failed
+submit could leave the user staring at an unchanged-looking button. This commit makes the failure
+impossible to miss and smooths its appearance.
+
+- **Scroll-to-error + focus.** On a failed submit, `IndexPage.revealErrors()` scrolls the error
+  banner into view (`scrollIntoView`, `block: 'nearest'` so a short page that already shows it does
+  not jump) and moves focus to it. The banner is now a focus target (`tabindex="-1"` +
+  `focus:outline-none`) whose `role="alert"` also announces the errors to assistive tech.
+  `focus({ preventScroll: true })` keeps focus from cancelling the smooth scroll; reduced-motion
+  users get an instant jump (guarded `window.matchMedia?.` so it is also safe in jsdom tests).
+- **Animated appearance.** The banner is wrapped in `<Transition name="fade">` (a reusable global
+  fade added to `app.scss`, with a `prefers-reduced-motion` guard) so it eases in instead of
+  popping.
+- **Smooth error-state transitions.** Added `transition-colors` to the `ReviewSection` card + its
+  heading (the red border/heading now animates in) and to the `FormField` label (its red-on-error
+  colour animates, matching the input border that already transitioned).
+- **Verified in-browser:** empty submit → banner present, `document.activeElement` is the banner,
+  it scrolls into view; the section card goes red with `— (required)` rows and the stepper shows
+  the red "!" step. 195 tests green (the `IndexPage` submit tests exercise `revealErrors` under the
+  matchMedia guard).
+
+## feat(ux): Step-4 loading skeleton + disabled-state transitions
+
+Sixth UX-polish commit (D43f/D43b) — completes the "loading and disabled states" theme.
+
+- **Step-4 skeleton.** Commit 2 gave Steps 1–3 skeletons but left Step 4 (Review) on a bare
+  `q-spinner`. Replaced it with stacked skeletons (a title bar + four `CardSkeleton`s shaped like
+  the Attendee/Sessions/Add-ons/Pricing cards, with 6/2/2/4 rows), so all four steps now share the
+  same content-shaped loading treatment. Added a matching loading test to `StepReview.spec` (mount
+  without flushing → skeletons present + no title; after flush → skeletons gone + title). 196 green.
+- **Disabled-state transitions.** The primary/submit button now transitions `opacity` (not just
+  colours), so its disable ↔ re-enable on a failed/fixed submit fades smoothly instead of snapping;
+  the `MerchCard` −/+ quantity glyphs gain `transition-colors` so their dim-to-`text-neutral-disabled`
+  at min/max eases rather than jumping. (Both already had `cursor-not-allowed` on the disabled
+  control.)
+
+## fix(ux): address code-review findings (banner-during-load, memoize fetches, transitions)
+
+The `/code-review` prep pass on the branch surfaced three actionable findings (14 survived
+verification; the rest are flagged in the PR as pre-existing/unreachable or deliberate tradeoffs).
+
+- **[CONFIRMED bug] Error banner during Step-4's load window.** `revealErrors()` targets
+  `[role="alert"]`, but the banner used to live inside `StepReview`'s data-loading `v-else`, so a
+  submit clicked while the review was still showing its skeleton found no banner to scroll/focus/
+  announce. Moved the `<Transition><ErrorBanner>` **outside** the loading gate — it is validation
+  state, not reviewed data, so it should not be hidden by the data skeleton.
+- **[CONFIRMED altitude] Skeleton flashed on every step revisit.** `fetchSessions`/`fetchAddons`
+  were not memoized (only `fetchEvent` was, D21), so every step remount re-incurred the 250 ms
+  latency — and the new skeletons + step transition made that flash prominent on Back / "Edit →
+  Step N". Memoized both (same in-flight-promise cache as `fetchEvent`): the first load pays the
+  latency once; every revisit resolves from cache before paint, so no skeleton re-flashes.
+  Verified in-browser: revisiting Step 2 shows 0 skeletons and the cards immediately.
+- **[CONFIRMED cleanup] Split transition CSS.** The `step` transition lived in an `IndexPage`
+  `<style>` while the near-identical `fade` was in `app.scss`. Moved `step` into `app.scss` next to
+  `fade` and collapsed the two `prefers-reduced-motion` guards into one shared block; removed the
+  `IndexPage` `<style>`.
+
+196 tests green; no console errors across a full step walk.

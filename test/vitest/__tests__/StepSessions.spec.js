@@ -142,4 +142,15 @@ describe('StepSessions (Step 2 — Session Selection)', () => {
     await cardByTitle(w, 'Opening Keynote').trigger('click');
     expect(w.text()).toContain('1 session selected');
   });
+
+  // D43(b) — skeletons stand in while sessions load, then clear for the day tabs + cards.
+  it('shows skeletons while sessions load, then the session cards', async () => {
+    const w = mount(Harness); // do NOT flush — assert the loading branch first
+    expect(w.findAll('.q-skeleton').length).toBeGreaterThan(0);
+    expect(cards(w)).toHaveLength(0);
+
+    await flushPromises();
+    expect(w.findAll('.q-skeleton')).toHaveLength(0);
+    expect(cards(w).length).toBeGreaterThan(0);
+  });
 });
