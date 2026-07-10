@@ -872,3 +872,24 @@ changed (still 192 green).
   silently checking it.
 - **Added the missing PR #19 row** to the §9 review log (meal packages + whole-dollar-price fix,
   merged `9a5f90c`, carrying D41/D42). The log had stopped at #18 while #19 was already merged.
+
+## fix(ux): stable scrollbar gutter — no horizontal shift between steps
+
+First of three atomic commits in the Phase-4 UX-polish PR (D43). The wizard scrolls at the
+**document** level (`App.vue` → `router-view` → `IndexPage`'s `min-h-screen` div — no Quasar
+`QLayout`), so a tall step (Add-ons, Review) gains a viewport scrollbar while a short step does
+not. On platforms with classic, space-reserving scrollbars that width difference shifts the whole
+centered layout horizontally as you move between steps — the issue the user reported.
+
+Fix: one global rule in `src/css/app.scss` — `html { scrollbar-gutter: stable }` — which always
+reserves the gutter, so the content width is constant across steps.
+
+- **Why `scrollbar-gutter: stable`, not `overflow-y: scroll`.** `overflow-y: scroll` also fixes the
+  shift but paints a permanent, empty scrollbar track on short steps; `stable` reserves the space
+  without a visible track. On overlay-scrollbar platforms (macOS default) scrollbars consume no
+  space, so the property is a harmless no-op — correct, since those platforms never show the shift.
+- **Verification caveat.** Headless Chromium uses overlay scrollbars, so the shift can't be
+  reproduced in `agent-browser`. Verified instead that `getComputedStyle(documentElement)
+.scrollbarGutter === 'stable'` (rule applied to the real scroll container) and that all four
+  steps still render/navigate with no console errors. The shift-on-classic-scrollbars behavior is
+  reasoned from the CSS spec.
