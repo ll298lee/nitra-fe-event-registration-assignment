@@ -33,7 +33,7 @@ describe('createOrderSummary — empty & ticket-only carts', () => {
     expect(summary.ticketLine.value).toMatchObject({ id: 'general', quantity: 1, amount: 299 });
     expect(summary.subtotal.value).toBe(299);
     expect(summary.total.value).toBe(299);
-    expect(formatCurrency(summary.total.value)).toBe('$299.00');
+    expect(formatCurrency(summary.total.value)).toBe('$299');
   });
 });
 
@@ -113,7 +113,7 @@ describe('createOrderSummary — killer ticket-switch (AC-P-6, D3)', () => {
     // The Edit → change-ticket path is a plain reactive write; no reconciliation code.
     registration.ticketId.value = 'general';
     expect(summary.workshopDiscount.value).toBe(0);
-    expect(formatCurrency(summary.total.value)).toBe('$448.00');
+    expect(formatCurrency(summary.total.value)).toBe('$448');
   });
 });
 
@@ -125,13 +125,13 @@ describe('createOrderSummary — full cart (AC-P-7)', () => {
     registration.merchSelections.merch1 = { size: 'L', quantity: 2 };
   }
 
-  it('totals $563.00 for General (no discount)', () => {
+  it('totals $563 for General (no discount)', () => {
     const { registration, summary } = makeSummary();
     registration.ticketId.value = 'general';
     loadFullCart(registration);
     expect(summary.subtotal.value).toBe(563);
     expect(summary.workshopDiscount.value).toBe(0);
-    expect(formatCurrency(summary.total.value)).toBe('$563.00');
+    expect(formatCurrency(summary.total.value)).toBe('$563');
   });
 
   it('totals $848.10 for VIP (863 − 14.90)', () => {

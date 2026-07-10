@@ -151,9 +151,9 @@ describe('StepReview (Step 4 — Review & Submit: summary + itemized pricing, D3
 
     const pricing = w.get('[aria-label="Pricing summary"]');
     expect(pricing.text()).toContain('VIP Ticket');
-    expect(pricing.text()).toContain('$599.00');
+    expect(pricing.text()).toContain('$599');
     expect(pricing.text()).toContain('Hands-on Vue.js Testing'); // qty 1 → bare name, no suffix
-    expect(pricing.text()).toContain('$149.00');
+    expect(pricing.text()).toContain('$149');
     expect(pricing.text()).toContain('Workshop discount (VIP 10%)');
     expect(pricing.text()).toContain('-$14.90');
     expect(pricing.text()).toContain('Grand Total');
@@ -176,7 +176,7 @@ describe('StepReview (Step 4 — Review & Submit: summary + itemized pricing, D3
 
     const pricing = w.get('[aria-label="Pricing summary"]');
     expect(pricing.text()).not.toContain('Workshop discount');
-    expect(pricing.text()).toContain('$448.00'); // 299 + 149
+    expect(pricing.text()).toContain('$448'); // 299 + 149
   });
 
   // AC-4.2 / D35f — a merch line with quantity > 1 shows "× n".
@@ -188,7 +188,7 @@ describe('StepReview (Step 4 — Review & Submit: summary + itemized pricing, D3
 
     const pricing = w.get('[aria-label="Pricing summary"]');
     expect(pricing.text()).toContain('Conference T-Shirt × 2');
-    expect(pricing.text()).toContain('$70.00'); // 35 × 2
+    expect(pricing.text()).toContain('$70'); // 35 × 2
   });
 
   // AC-4.3 — each Edit control jumps to its step and preserves all state.

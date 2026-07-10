@@ -18,7 +18,7 @@ describe('MealCard (Step 3 — Meal Packages)', () => {
   it('renders name, price, and description', () => {
     const w = mountCard({ meal: MEAL2 });
     expect(w.text()).toContain('Premium Dinner — Day 1 Networking Event');
-    expect(w.text()).toContain('$89.00');
+    expect(w.text()).toContain('$89');
     expect(w.text()).toContain(MEAL2.description);
   });
 

@@ -5,18 +5,20 @@ import {
   WORKSHOP_DISCOUNT_RATE,
 } from './pricing.js';
 
-describe('formatCurrency (D5)', () => {
-  // AC-1.4 — ticket prices render two-decimal currency.
-  it('formatCurrency 299/599/99 → $299.00/$599.00/$99.00', () => {
-    expect(formatCurrency(299)).toBe('$299.00');
-    expect(formatCurrency(599)).toBe('$599.00');
-    expect(formatCurrency(99)).toBe('$99.00');
+describe('formatCurrency (D5/D42)', () => {
+  // AC-1.4 — whole-dollar ticket prices render with no cents.
+  it('formatCurrency 299/599/99 → $299/$599/$99 (whole dollars, no cents)', () => {
+    expect(formatCurrency(299)).toBe('$299');
+    expect(formatCurrency(599)).toBe('$599');
+    expect(formatCurrency(99)).toBe('$99');
   });
 
-  // AC-P-1 — two decimals + thousands separators.
-  it('formatCurrency two-decimals + separators', () => {
-    expect(formatCurrency(1234.5)).toBe('$1,234.50');
-    expect(formatCurrency(0)).toBe('$0.00');
+  // AC-P-1 (D42) — whole dollars drop cents; fractional amounts keep 2-decimal cents; both
+  // thousands-separated.
+  it('omits cents for whole dollars but keeps them for fractional amounts', () => {
+    expect(formatCurrency(1234)).toBe('$1,234'); // whole → no cents, separator kept
+    expect(formatCurrency(1234.5)).toBe('$1,234.50'); // fractional → 2-decimal cents
+    expect(formatCurrency(0)).toBe('$0');
     expect(formatCurrency(848.1)).toBe('$848.10');
   });
 });
@@ -34,11 +36,11 @@ describe('workshopDiscountAmount (D11, rate = 0.10)', () => {
     expect(formatCurrency(round2(149 - discount))).toBe('$134.10');
   });
 
-  // AC-P-5 — non-VIP tickets get no discount; ws1 stays $149.00.
+  // AC-P-5 — non-VIP tickets get no discount; ws1 stays $149.
   it('General/Student → discount 0', () => {
     expect(workshopDiscountAmount('general', [149])).toBe(0);
     expect(workshopDiscountAmount('student', [149])).toBe(0);
-    expect(formatCurrency(149)).toBe('$149.00');
+    expect(formatCurrency(149)).toBe('$149');
   });
 
   // AC-P-3/P-4 (pure part) — discount is computed only from the workshop prices it

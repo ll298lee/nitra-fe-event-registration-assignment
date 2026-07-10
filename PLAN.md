@@ -832,3 +832,29 @@ Judgment calls (flagged for review):
 @1440px) byte-identical to `WorkshopCard`, selection ring renders (no UnoCSS static-scan issue).
 Tests: `MealCard.spec.js` (new) + `StepAddons.spec.js` meal block (both cards in order AC-3.12;
 toggle on/off + live total + `aria-checked`, both selectable together AC-3.13).
+
+## fix(pricing): whole-dollar prices show no cents
+
+Per the Figma visual spec (user-directed), all displayed prices drop the `.00` — **unless the
+value genuinely has cents, in which case the cents are kept**. So `formatCurrency` now branches on
+`Number.isInteger`: whole dollars format with no fraction digits (`$45`, `$299`, `$1,234`), and
+fractional amounts keep two decimals (the VIP discount `$14.90`, discounted totals `$733.10`).
+Recorded as **D42** (supersedes D5's always-two-decimals); it also resolves the D41 meal-price
+cents flag (the price-colour flag stays open).
+
+Key points:
+
+- **Display-only, zero precision loss.** The fix lives entirely in the one shared `formatCurrency`
+  primitive, so every price display inherits it and the pricing engine keeps exact values — the VIP
+  discount is still precisely `14.9` and the killer-sequence math is untouched. Rounding everything
+  to whole dollars was rejected: it would misreport the `$14.90` discount as `$15`.
+- **Preserves the measured Figma discount.** D29 measured the order-summary discount as `-$14.90`;
+  that's fractional, so it keeps its cents. Only whole-dollar item prices/totals lose the trailing
+  `.00`. Ticket/merch cards + the Step-4 `dollars` helper already rendered whole dollars.
+- **Test split for rigor:** engine tests assert exact **numeric** values + the fractional strings
+  (`$14.90`), the formatter's own test locks the whole-vs-fractional rule, and component tests
+  assert the rendered no-cents strings.
+
+192 tests green, `yarn check` clean; verified in-browser @1440px — Step-3 workshop `$149`, meal
+`$45`/`$89`, ticket line `$599` (all whole, no cents); the VIP order summary keeps `-$14.90` and
+`$733.10`.

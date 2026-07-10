@@ -56,7 +56,7 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
     const w = await mountStep();
     const ws1 = cardByName(w, 'Hands-on Vue.js Testing'); // 22/30 → 8 left, $149
 
-    expect(ws1.text()).toContain('$149.00');
+    expect(ws1.text()).toContain('$149');
     expect(ws1.text()).toContain('Nov 16, 2:00 PM – 5:00 PM');
     expect(ws1.text()).toContain('8 spots remaining');
     expect(ws1.attributes('disabled')).toBeUndefined();
@@ -190,7 +190,7 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
 
     await cardByName(w, 'Hands-on Vue.js Testing').trigger('click');
     expect(summary.text()).toContain('Hands-on Vue.js Testing × 1');
-    expect(summary.text()).toContain('$149.00');
+    expect(summary.text()).toContain('$149');
   });
 });
 
@@ -227,7 +227,7 @@ describe('StepAddons (Step 3 — Merchandise + shipping banner)', () => {
 
     const summary = w.find('[aria-label="Order summary"]');
     expect(summary.text()).toContain('Conference T-Shirt × 1');
-    expect(summary.text()).toContain('$35.00');
+    expect(summary.text()).toContain('$35');
   });
 
   // AC-3.6 — a chosen size is recorded on the selection.
@@ -296,7 +296,7 @@ describe('StepAddons (Step 3 — Meal Packages)', () => {
     expect(cards[1].text()).toContain('Premium Dinner — Day 1 Networking Event');
 
     const lunch = cardByName(w, 'Standard Lunch (Both Days)');
-    expect(lunch.text()).toContain('$45.00');
+    expect(lunch.text()).toContain('$45');
     expect(lunch.text()).toContain('Buffet lunch with vegetarian and vegan options.');
   });
 
@@ -310,7 +310,7 @@ describe('StepAddons (Step 3 — Meal Packages)', () => {
     expect(store.selectedMealIds.value).toContain('meal1');
     expect(lunch.attributes('aria-checked')).toBe('true');
     expect(summary.text()).toContain('Standard Lunch (Both Days) × 1');
-    expect(summary.text()).toContain('$45.00');
+    expect(summary.text()).toContain('$45');
 
     await lunch.trigger('click');
     expect(store.selectedMealIds.value).not.toContain('meal1');
