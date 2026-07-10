@@ -69,7 +69,7 @@ function onKeydown(e) {
 <template>
   <div class="flex flex-col gap-8">
     <section class="flex flex-col gap-4">
-      <h2 class="text-subtitle1 text-neutral">Select Ticket Type</h2>
+      <h2 class="text-subtitle1 text-neutral">{{ $t('step1.ticketHeading') }}</h2>
 
       <div v-if="loadingEvent" class="grid grid-cols-1 gap-4 tablet:grid-cols-3">
         <CardSkeleton v-for="n in 3" :key="n" :lines="3" />
@@ -79,7 +79,7 @@ function onKeydown(e) {
         v-else
         ref="groupRef"
         role="radiogroup"
-        aria-label="Ticket type"
+        :aria-label="$t('step1.ticketAria')"
         class="grid grid-cols-1 gap-4 tablet:grid-cols-3"
         @keydown="onKeydown"
       >
@@ -97,24 +97,24 @@ function onKeydown(e) {
     </section>
 
     <section class="flex flex-col gap-8">
-      <h2 class="text-h3 text-neutral">Attendee Information</h2>
+      <h2 class="text-h3 text-neutral">{{ $t('step1.heading') }}</h2>
 
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-5 tablet:flex-row tablet:gap-6">
           <FormField
             v-model="attendee.fullName"
             class="flex-1"
-            label="Full Name"
-            placeholder="Enter your full name"
+            :label="$t('step1.fields.fullName.label')"
+            :placeholder="$t('step1.fields.fullName.placeholder')"
             autocomplete="name"
             :error="attendeeError('fullName')"
           />
           <FormField
             v-model="attendee.email"
             class="flex-1"
-            label="Email"
+            :label="$t('step1.fields.email.label')"
             type="email"
-            placeholder="Enter your email address"
+            :placeholder="$t('step1.fields.email.placeholder')"
             autocomplete="email"
             :error="attendeeError('email')"
           />
@@ -124,17 +124,17 @@ function onKeydown(e) {
           <FormField
             v-model="attendee.phone"
             class="flex-1"
-            label="Phone"
+            :label="$t('step1.fields.phone.label')"
             type="tel"
-            placeholder="Enter your phone number"
+            :placeholder="$t('step1.fields.phone.placeholder')"
             autocomplete="tel"
             :error="attendeeError('phone')"
           />
           <FormField
             v-model="attendee.company"
             class="flex-1"
-            label="Company"
-            placeholder="Enter your company name"
+            :label="$t('step1.fields.company.label')"
+            :placeholder="$t('step1.fields.company.placeholder')"
             autocomplete="organization"
             :error="attendeeError('company')"
           />
@@ -142,18 +142,18 @@ function onKeydown(e) {
 
         <FormField
           v-model="attendee.jobTitle"
-          label="Job Title"
-          placeholder="Enter your job title"
+          :label="$t('step1.fields.jobTitle.label')"
+          :placeholder="$t('step1.fields.jobTitle.placeholder')"
           autocomplete="organization-title"
           :error="attendeeError('jobTitle')"
         />
 
         <FormField
           v-model="attendee.shippingAddress"
-          label="Shipping Address"
+          :label="$t('step1.fields.shippingAddress.label')"
           :optional="!shippingRequired"
           :required="shippingRequired"
-          placeholder="Enter your shipping address"
+          :placeholder="$t('step1.fields.shippingAddress.placeholder')"
           autocomplete="street-address"
           :error="attendeeError('shippingAddress')"
         />

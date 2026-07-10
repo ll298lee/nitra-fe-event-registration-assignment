@@ -49,16 +49,16 @@ function onSizeChange(e) {
 
     <div class="flex w-full items-center gap-4">
       <label v-if="hasSizes" class="flex items-center gap-2 whitespace-nowrap">
-        <span class="text-sm font-medium text-neutral-muted">Size:</span>
+        <span class="text-sm font-medium text-neutral-muted">{{ $t('merch.size') }}</span>
         <span class="relative inline-flex items-center">
           <select
             :value="size ?? ''"
-            :aria-label="`Size for ${merch.name}`"
+            :aria-label="$t('merch.sizeAria', { name: merch.name })"
             class="cursor-pointer appearance-none rounded-[6px] border border-solid border-neutral-muted bg-surface-l0 py-1.5 pl-3 pr-7 text-sm font-medium"
             :class="size ? 'text-neutral' : 'text-neutral-quiet'"
             @change="onSizeChange"
           >
-            <option value="" disabled>Select</option>
+            <option value="" disabled>{{ $t('merch.selectPlaceholder') }}</option>
             <option v-for="s in merch.sizes" :key="s" :value="s">{{ s }}</option>
           </select>
           <span
@@ -70,11 +70,11 @@ function onSizeChange(e) {
       </label>
 
       <div class="flex items-center gap-2">
-        <span class="text-sm font-medium text-neutral-muted">Qty:</span>
+        <span class="text-sm font-medium text-neutral-muted">{{ $t('merch.qty') }}</span>
         <button
           type="button"
           :disabled="atMin"
-          :aria-label="`Decrease ${merch.name} quantity`"
+          :aria-label="$t('merch.decreaseAria', { name: merch.name })"
           class="flex size-7 items-center justify-center rounded-[6px] border-0 bg-surface-l2 disabled:cursor-not-allowed"
           @click="emit('decrement', merch.id)"
         >
@@ -97,7 +97,7 @@ function onSizeChange(e) {
         <button
           type="button"
           :disabled="atMax"
-          :aria-label="`Increase ${merch.name} quantity`"
+          :aria-label="$t('merch.increaseAria', { name: merch.name })"
           class="flex size-7 items-center justify-center rounded-[6px] border-0 bg-surface-l2 disabled:cursor-not-allowed"
           @click="emit('increment', merch.id)"
         >
@@ -112,10 +112,12 @@ function onSizeChange(e) {
             <rect x="5" y="0" width="2" height="12" />
           </svg>
         </button>
-        <span class="text-[10px] font-regular text-neutral-quiet">max {{ merch.maxQuantity }}</span>
+        <span class="text-[10px] font-regular text-neutral-quiet">{{
+          $t('merch.max', { n: merch.maxQuantity })
+        }}</span>
       </div>
     </div>
 
-    <span v-if="added" class="text-[11px] font-semibold text-success">✓ Added to order</span>
+    <span v-if="added" class="text-[11px] font-semibold text-success">{{ $t('merch.added') }}</span>
   </div>
 </template>

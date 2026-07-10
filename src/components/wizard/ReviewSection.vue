@@ -34,7 +34,7 @@ const hasError = computed(() => props.rows.some((r) => r.error) || props.errors.
       <button
         type="button"
         class="shrink-0 cursor-pointer rounded-[2px] border-0 bg-transparent text-sm font-semibold text-brand underline transition-colors hover:text-brand-emphasis focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--border-brand-emphasis)]"
-        :aria-label="`Edit ${title}`"
+        :aria-label="$t('step4.editAria', { title })"
         @click="$emit('edit')"
       >
         {{ editLabel }}

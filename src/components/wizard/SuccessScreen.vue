@@ -34,15 +34,15 @@ defineEmits(['home']);
       </svg>
     </div>
 
-    <h1 class="text-h2 text-success">Registration Complete!</h1>
+    <h1 class="text-h2 text-success">{{ $t('success.title') }}</h1>
 
-    <p class="text-lg font-regular text-neutral">Confirmation #{{ confirmationNumber }}</p>
+    <p class="text-lg font-regular text-neutral">
+      {{ $t('success.confirmation', { number: confirmationNumber }) }}
+    </p>
 
     <div class="flex flex-col text-center text-sm font-regular text-neutral-muted">
-      <p>
-        Thank you, {{ name }}! Your {{ ticketName }} registration for {{ eventName }} is confirmed.
-      </p>
-      <p>You will receive a confirmation email at {{ email }}.</p>
+      <p>{{ $t('success.thanks', { name, ticket: ticketName, event: eventName }) }}</p>
+      <p>{{ $t('success.email', { email }) }}</p>
     </div>
 
     <button
@@ -50,7 +50,7 @@ defineEmits(['home']);
       class="flex h-10 min-w-[72px] cursor-pointer items-center justify-center rounded-[10px] border-0 bg-accent-emphasis-rest px-4 text-subtitle2 text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active"
       @click="$emit('home')"
     >
-      Back to Home
+      {{ $t('success.backToHome') }}
     </button>
   </div>
 </template>

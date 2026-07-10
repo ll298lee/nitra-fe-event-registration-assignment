@@ -26,11 +26,7 @@ const conflicting = computed(() => props.conflicts.length > 0);
 // it filled or the conflict arose) stays deselectable — kept, not auto-removed (D10).
 const blocked = computed(() => !props.selected && (full.value || conflicting.value));
 
-const conflictLabel = computed(() => {
-  if (!conflicting.value) return '';
-  const titles = props.conflicts.map((s) => s.title).join(', ');
-  return props.selected ? `Overlaps ${titles}` : `Unavailable — overlaps ${titles}`;
-});
+const conflictTitles = computed(() => props.conflicts.map((s) => s.title).join(', '));
 
 const DROP_SHADOW = '0px_4px_16px_0px_rgba(0,0,0,0.08),0px_1px_3px_0px_rgba(0,0,0,0.04)';
 const rootClass = computed(() => {
@@ -74,11 +70,15 @@ function onToggle() {
       class="text-[11px] leading-[14px] text-neutral-quiet"
       :class="full ? 'font-semibold' : 'font-regular'"
     >
-      {{ full ? 'Sold Out' : `${remaining} spots remaining` }}
+      {{ full ? $t('workshop.soldOut') : $t('workshop.spotsRemaining', { n: remaining }) }}
     </span>
 
     <span v-if="conflicting && !full" class="text-[11px] font-medium leading-[14px] text-warning">
-      {{ conflictLabel }}
+      {{
+        selected
+          ? $t('conflict.cardOverlaps', { sessions: conflictTitles })
+          : $t('conflict.cardUnavailable', { sessions: conflictTitles })
+      }}
     </span>
   </button>
 </template>

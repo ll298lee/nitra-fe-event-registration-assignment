@@ -40,11 +40,7 @@ onMounted(async () => {
   }
 });
 
-const CATEGORIES = [
-  { key: 'workshop', label: 'Workshops' },
-  { key: 'meal', label: 'Meal Packages' },
-  { key: 'merchandise', label: 'Merchandise' },
-];
+const CATEGORIES = [{ key: 'workshop' }, { key: 'meal' }, { key: 'merchandise' }];
 const activeIndex = ref(0);
 const activeCategory = computed(() => CATEGORIES[activeIndex.value]);
 
@@ -165,12 +161,12 @@ function onTabKeydown(e) {
 
     <div v-else class="flex flex-col gap-8 desktop:flex-row desktop:items-start">
       <div class="flex flex-1 flex-col gap-6">
-        <h2 class="text-h3 text-neutral">Select Add-ons</h2>
+        <h2 class="text-h3 text-neutral">{{ $t('step3.heading') }}</h2>
 
         <div
           ref="tablistRef"
           role="tablist"
-          aria-label="Add-on category"
+          :aria-label="$t('step3.categoryAria')"
           class="inline-flex w-fit max-w-full flex-wrap gap-1 rounded-[10px] bg-surface-l2 p-1 tablet:flex-nowrap"
           @keydown="onTabKeydown"
         >
@@ -191,7 +187,7 @@ function onTabKeydown(e) {
             "
             @click="activeIndex = i"
           >
-            {{ cat.label }}
+            {{ $t(`step3.tabs.${cat.key}`) }}
           </button>
         </div>
 

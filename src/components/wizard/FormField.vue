@@ -28,7 +28,8 @@ const errorId = `${inputId}-error`;
       class="text-sm font-medium transition-colors"
       :class="error ? 'text-danger' : 'text-neutral'"
     >
-      {{ label }}<span v-if="required"> *</span><span v-if="optional"> (Optional)</span>
+      {{ label }}<span v-if="required"> *</span
+      ><span v-if="optional">{{ ' ' + $t('field.optional') }}</span>
     </label>
     <input
       :id="inputId"

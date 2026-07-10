@@ -1,4 +1,5 @@
 import { ref, computed, toValue, provide, inject } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRegistration } from './useRegistration.js';
 import {
   validateAll,
@@ -32,8 +33,10 @@ const VALIDATION = Symbol('validation');
  *
  * @param {ReturnType<typeof import('./useRegistration.js').createRegistration>} registration
  * @param {{ sessions?: unknown, addons?: unknown }} [sources]
+ * @param {(key: string, params?: object) => string} t  i18n translator, injected so the pure
+ *   validation layer stays framework-free (D45); supplied by the provide/use wrappers below.
  */
-export function createValidation(registration, sources = {}) {
+export function createValidation(registration, sources = {}, t) {
   const submitted = ref(false);
 
   // Live error map. Reading the reactive `attendee`/`merchSelections` and the `toValue`'d
@@ -48,7 +51,8 @@ export function createValidation(registration, sources = {}) {
         selectedWorkshopIds: toValue(registration.selectedWorkshopIds),
         merchSelections: registration.merchSelections,
       },
-      { sessions: toValue(sources.sessions) ?? [], addons: toValue(sources.addons) ?? [] }
+      { sessions: toValue(sources.sessions) ?? [], addons: toValue(sources.addons) ?? [] },
+      t
     )
   );
 
@@ -59,7 +63,7 @@ export function createValidation(registration, sources = {}) {
   // stepper flags as errored, and the flat "Step N: {message}" list the error banner renders.
   // Empty until the first failed submit, per the deferred-validation model (D7).
   const errorStepsShown = computed(() => (submitted.value ? errorSteps.value : []));
-  const errorSummary = computed(() => (submitted.value ? summarizeErrors(errors.value) : []));
+  const errorSummary = computed(() => (submitted.value ? summarizeErrors(errors.value, t) : []));
 
   /**
    * Run the unified submit-time validation (README §4.4): mark the form submitted so
@@ -105,7 +109,8 @@ export function createValidation(registration, sources = {}) {
  * @param {{ sessions?: unknown, addons?: unknown }} [sources]
  */
 export function provideValidation(registration, sources = {}) {
-  const validation = createValidation(registration, sources);
+  const { t } = useI18n({ useScope: 'global' });
+  const validation = createValidation(registration, sources, t);
   provide(VALIDATION, validation);
   return validation;
 }
@@ -118,5 +123,6 @@ export function provideValidation(registration, sources = {}) {
 export function useValidation(sources = {}) {
   const injected = inject(VALIDATION, null);
   if (injected) return injected;
-  return createValidation(useRegistration(), sources);
+  const { t } = useI18n({ useScope: 'global' });
+  return createValidation(useRegistration(), sources, t);
 }
