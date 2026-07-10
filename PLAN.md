@@ -656,3 +656,120 @@ D35e); the conditional Shipping Address row present/absent (D35g); itemized pric
 discount + Grand Total + no-subtotal (AC-4.2); non-VIP no discount; Edit → `goToStep` with state
 preserved (AC-4.3); empty states incl. the pricing card's own empty state and the em-dash ticket
 fallback. `datetime.test.js` — `formatDateTime` wall-clock (no viewer-offset shift).
+
+## feat(validation): step 4 submit-time validation wiring
+
+Step 4 PR 3 (of ~4, D34/D36). Wired the pure `validation.js` (PR #15) into the UI: a new
+`useValidation` composable (provide/inject at the wizard root, like `useRegistration`) exposes a
+`submitted` flag + a **live** `validateAll` error map + `attemptSubmit()`. The Step-4 "Submit
+Registration" button now runs unified validation; on failure the Review page marks the failing
+sections and Step-1 surfaces its field errors, all clearing live once fixed. New
+`useValidation.js` + tests; `ReviewSection`/`StepReview`/`StepAttendee`/`IndexPage` wired. Measured
+error-state parity vs frame `1076:936` via `agent-browser`. Recorded as **D36**. 168 tests green,
+`yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **"Reward early, punish late" via a single `submitted` flag (D7/D36b):** nothing validates before
+  the first submit; after a failed submit every currently-invalid field shows its error and clears
+  live as it becomes valid. No separate per-field "touched" map — an invalid field surfaces its
+  error post-submit whether or not it was touched, so the live recompute subsumes touched-tracking.
+- **Review error display from frame `1076:936`:** an errored section card turns its border and
+  heading danger-red; a failing attendee field shows "— (required)" / "— (required for merchandise)"
+  (or the entered value in red when present-but-invalid). **Spec-gap fill (D36d):** the frame shows
+  only the Attendee card, so session↔session / workshop↔session conflicts are rendered as red rows on
+  the Sessions / Add-ons cards by analogy.
+- **Error navigation = the red section cards + the existing Edit links** (no invented stepper error
+  badge — Figma has none; a red card maps 1:1 to a step + its Edit link, satisfying README §4.5).
+- **PR-boundary refinement (D36h):** this PR is the invalid path only — a **valid** submit is a
+  guarded no-op placeholder; the async `submitRegistration` + pending + **double-submit guard** +
+  terminal success screen move together into the next PR (the guard is meaningless without the async
+  call, so it left D34's PR-3 grouping).
+- **Shipping "(Optional)" label drops** once merch is selected (required, AC-1.6) and reverts when
+  merch is removed (non-sticky, AC-1.7).
+
+Tests: `useValidation.test.js` — no pre-submit errors, reveal-on-fail, live-clear, valid-pass,
+reset, session/workshop conflict attribution + wizard order, shipping-conditional (AC-V-5, AC-4.4/4.6/4.9,
+AC-1.6/1.7). `StepReview.spec.js` — red Attendee card + "— (required)" markers, present-but-invalid
+value shown flagged, session/stale-workshop conflict rows (kept, D10), merch-shipping requirement,
+live revert of a section's error state, and a valid submit leaving every section clean.
+`StepAttendee.spec.js` — field + ticket errors after failed submit, live-clear, shipping "(Optional)"
+toggle.
+
+## feat(validation): step-4 error affordances + step-1 input focus/error states
+
+A round of reviewer/user feedback on the open PR #17, all grounded in Figma frames. **Step-4 error
+state (D37, frame `1076:904`):** I had declined a stepper badge in D36f after inspecting only the
+Attendee sub-frame (`1076:936`); the user pointed to the full error frame `1076:904`, so **D37
+supersedes D36f** (recorded, not silently). Added a `WizardStepper` error state (red circle + white
+"!" glyph + red label for an errored step, and the **connector after it turns gray**), a new
+`ErrorBanner` (role="alert", "Please fix…" heading + "• Step N: {message}" bullets), and a **disabled
+Submit** in the error state. **Step-1 input states (D38, frame `1203:587`):** `FormField` now
+**darkens its border on focus without thickening** (dropped the focus ring + the off-palette teal),
+and an **errored field stays red-bordered even when focused**, with the whole label red. Measured
+parity vs both frames via `agent-browser`. 178 tests green, `yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **D37 supersedes D36f** — reasoned from an incomplete (Attendee-only) frame; the full `1076:904`
+  is the visual truth. The stepper error style **overrides** completed/current/upcoming, and the
+  connector **after** an errored step reverts to gray (`bg-surface-l2`) while connectors after
+  completed steps stay teal (confirmed against the stepper node `1101:1070`).
+- **Banner copy** uses the app's **canonical `validation.js` messages** ("Step 1: Phone is required"),
+  not the frame's mock wording, to keep a single message source (D34d); the heading is verbatim.
+  `summarizeErrors` flattens the per-step map to wizard-ordered "Step N: {msg}" lines.
+- **Disabled Submit = 50% opacity** (frame). Quasar's global `[disabled]{opacity:.6!important}` beat a
+  plain `disabled:opacity-50`, so I matched the frame's 0.5 with **`disabled:!opacity-50`** (verified
+  in-browser). It re-enables live as the errors clear (reward early, D7).
+- **Input focus = darken, not thicken (D38).** The states node `1203:587` has no teal and all-1px
+  borders; focus darkens to `border-neutral-emphasis` (#5c6970). Read the node's darker-gray column as
+  the **focus** darken rather than a persistent required border (a required border would contradict the
+  Step-1 frame `1069:968`, which draws required fields light). **Deferred/flagged:** the node shows a
+  required "Shipping Address \*" asterisk — not added, since `1069:968` shows no asterisks and a "\*"
+  only on shipping would be inconsistent. **A11y:** dropping the focus ring per the user weakens the
+  keyboard-focus cue to a border-colour darken — a deliberate fidelity-over-a11y tradeoff.
+
+Tests: `validation.test.js` — `summarizeErrors`. `useValidation.test.js` — submitted-gated
+`errorSummary`/`errorStepsShown`. `WizardStepper.spec.js` — errored step flagged with the "!" glyph
+overriding the check + the gray connector. `StepReview.spec.js` — the banner appears after a failed
+submit. `IndexPage.spec.js` — end-to-end: a failed submit marks the stepper, disables Submit, shows
+the banner; and Submit re-enables once the form is fixed. `FormField.spec.js` (new) — rest/focus/error
+border classes (darken-not-thicken, red-even-when-focused, red error label).
+
+## fix(step-1): shipping required state — darker border + "\*" label
+
+User correction of a D38 interpretation call. When merchandise is selected (Shipping Address becomes
+required), its input border **darkens at rest** (`border-neutral-emphasis`, not only on focus) and the
+label becomes **"Shipping Address \*"** — the "MERCHANDISE SELECTED" state of frame `1203:587`. D38 had
+read that darker-gray column as a focus-only darken and deferred the asterisk; the user confirmed it is
+the required state, recorded as **D39** (supersedes those two D38 flags). Added a `FormField`
+`required` prop (darker resting border + an appended " \*"); `StepAttendee` passes
+`:required="shippingRequired"`. Only the conditionally-required shipping field gets this — the
+always-required fields stay light + asterisk-free per `1069:968`, so the "\*" + darken are a
+requirement-just-changed transition cue, not a general required style. 179 tests green, `yarn check`
+clean; verified in-browser (label "Shipping Address \*", resting border #5c6970 with no focus).
+
+Tests: `FormField.spec.js` — a required field shows the "\*" and a darker resting border (no focus).
+`StepAttendee.spec.js` — the shipping label toggles between "(Optional)" and "Shipping Address \*" as
+merch is added/removed.
+
+## fix(step-3): shipping banner icon left of content + font-weight verification
+
+Two post-review touch-ups on PR #17.
+
+- **Shipping banner icon position** (`ShippingBanner`, frame `1220:2186`): the info icon rendered
+  **stacked above** the title/body instead of to its left. Cause: Quasar's core `.flex` rule forces
+  `flex-wrap: wrap`, so the wide body paragraph wrapped the whole text column below the icon. Fixed
+  with **`flex-nowrap`** on the row (+ `min-w-0` on the column so the paragraph wraps internally).
+  Verified in-browser: container `flex-wrap: nowrap`, icon and content share the top edge with the
+  icon to the left — matching the frame.
+- **Font-weight check** (user-requested; **no code change**): re-verified the input-label weight
+  (`FormField` `font-medium`) and the stepper label weights (current/errored `font-semibold`,
+  completed `font-medium`, upcoming `font-regular`) against Figma. Every element is in the **correct
+  weight tier**; the only divergences are inherent token quantization (Figma `body/sm/medium` = 550
+  and the stepper's unbound raw Inter styles 600/500/400 vs the design system's 485/570/610/630) —
+  the chosen tokens are the nearest available, so nothing changed. Recorded in `IMPLEMENTATION_PLAN.md`
+  §4.
+
+179 tests green, `yarn check` clean. Tests: `StepAddons.spec.js` gains a `flex-nowrap` assertion on
+the banner to guard the icon-on-top regression; the font check needed no code, so no new test.

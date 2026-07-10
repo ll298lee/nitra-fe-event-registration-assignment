@@ -1,29 +1,41 @@
 <script setup>
 // Presentational stepper: renders `steps` at `current` and emits `select` on click.
 // Navigation is free/non-linear — every step is clickable with no validation gate
-// (D13, AC-N-1); the parent owns the step change.
+// (D13, AC-N-1); the parent owns the step change. A step listed in `errorKeys` renders an
+// error state that overrides completed/current/upcoming (D37).
 
 const props = defineProps({
   /** @type {{ key?: string, label: string }[]} */
   steps: { type: Array, required: true },
   current: { type: Number, required: true },
+  /** Keys of steps whose section has a submit-time error (D37). */
+  errorKeys: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['select']);
 
-function circleClass(i) {
+function isError(step) {
+  return props.errorKeys.includes(step.key);
+}
+
+function circleClass(step, i) {
+  if (isError(step)) return 'bg-danger-emphasis-rest text-inverse';
   return i <= props.current
     ? 'bg-brand-emphasis-rest text-inverse'
     : 'bg-surface-l2 text-neutral-quiet';
 }
 
-function labelClass(i) {
+function labelClass(step, i) {
+  if (isError(step)) return 'text-danger font-semibold';
   if (i === props.current) return 'text-neutral font-semibold';
   if (i < props.current) return 'text-neutral font-medium';
   return 'text-neutral-quiet font-regular';
 }
 
 function connectorClass(i) {
+  // The connector after a step shows the completed style only for a completed, non-errored step;
+  // an errored step's outgoing connector reverts to the incomplete style (D37).
+  if (isError(props.steps[i])) return 'bg-surface-l2';
   return i < props.current ? 'bg-brand-emphasis-rest' : 'bg-surface-l2';
 }
 </script>
@@ -35,14 +47,25 @@ function connectorClass(i) {
         type="button"
         class="flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 transition-opacity hover:opacity-70"
         :aria-current="i === current ? 'step' : undefined"
+        :aria-invalid="isError(step) || undefined"
         @click="emit('select', i)"
       >
         <span
           class="text-md flex h-8 w-8 items-center justify-center rounded-full font-semibold"
-          :class="circleClass(i)"
+          :class="circleClass(step, i)"
         >
           <svg
-            v-if="i < current"
+            v-if="isError(step)"
+            viewBox="0 0 32 32"
+            class="h-8 w-8"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M15 10H17V18H15V10Z" />
+            <path d="M15 20H17V22H15V20Z" />
+          </svg>
+          <svg
+            v-else-if="i < current"
             viewBox="0 0 32 32"
             class="h-8 w-8"
             fill="none"
@@ -58,7 +81,9 @@ function connectorClass(i) {
           </svg>
           <span v-else>{{ i + 1 }}</span>
         </span>
-        <span class="text-[13px] leading-[normal]" :class="labelClass(i)">{{ step.label }}</span>
+        <span class="text-[13px] leading-[normal]" :class="labelClass(step, i)">{{
+          step.label
+        }}</span>
       </button>
 
       <span

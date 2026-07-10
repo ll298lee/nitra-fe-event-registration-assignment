@@ -2,14 +2,17 @@
 import { ref, computed, onMounted } from 'vue';
 import { fetchEvent, fetchSessions, fetchAddons } from '../../data/facade.js';
 import { useRegistration } from '../../composables/useRegistration.js';
+import { useValidation } from '../../composables/useValidation.js';
 import { formatDateTime } from '../../utils/datetime.js';
 import ReviewSection from './ReviewSection.vue';
 import PricingSummaryCard from './PricingSummaryCard.vue';
+import ErrorBanner from './ErrorBanner.vue';
 
-// Step 4 — Review & Submit (PR 2, D35). A single-column, read-only summary of every Step 1–3
+// Step 4 — Review & Submit (D35/D36). A single-column, read-only summary of every Step 1–3
 // selection plus the itemized pricing; each section's Edit control jumps back to its step, with
-// all state preserved by the shared store (AC-4.1/4.2/4.3). Submit + validation wiring and the
-// success screen are later Step-4 PRs (D34).
+// all state preserved by the shared store (AC-4.1/4.2/4.3). After a failed submit, sections with
+// errors are flagged and surface the specific missing fields / time conflicts (AC-4.5/4.6/4.9).
+// The async submit + success screen are a later Step-4 PR (D36h).
 
 const {
   attendee,
@@ -20,6 +23,8 @@ const {
   merchSelections,
   goToStep,
 } = useRegistration();
+
+const { submitted, errors, errorSummary } = useValidation();
 
 const ticketTypes = ref([]);
 const sessions = ref([]);
@@ -47,31 +52,49 @@ const addonById = computed(() => new Map(addons.value.map((a) => [a.id, a])));
 // card's formatCurrency — do not collapse the two (D35).
 const dollars = (price) => `$${price}`;
 const EM_DASH = '—';
+const REQUIRED = '— (required)';
+const REQUIRED_MERCH = '— (required for merchandise)';
 
 const selectedTicket = computed(
   () => ticketTypes.value.find((t) => t.id === ticketId.value) ?? null
 );
 
+// Error marker for a failing attendee field (D36): a missing field reads "— (required)"
+// (shipping: "— (required for merchandise)"); a present-but-invalid value is returned as-is.
+// Returns undefined when the field is valid or before the first submit.
+function attendeeRowError(key, value) {
+  if (!submitted.value || !errors.value.attendee[key]) return undefined;
+  if (!value || value === EM_DASH) {
+    return key === 'shippingAddress' ? REQUIRED_MERCH : REQUIRED;
+  }
+  return value;
+}
+
 const attendeeRows = computed(() => {
   const rows = [
-    { label: 'Name', value: attendee.fullName || EM_DASH },
-    { label: 'Email', value: attendee.email || EM_DASH },
-    { label: 'Phone', value: attendee.phone || EM_DASH },
-    { label: 'Company', value: attendee.company || EM_DASH },
-    { label: 'Job Title', value: attendee.jobTitle || EM_DASH },
+    { label: 'Name', key: 'fullName', value: attendee.fullName || EM_DASH },
+    { label: 'Email', key: 'email', value: attendee.email || EM_DASH },
+    { label: 'Phone', key: 'phone', value: attendee.phone || EM_DASH },
+    { label: 'Company', key: 'company', value: attendee.company || EM_DASH },
+    { label: 'Job Title', key: 'jobTitle', value: attendee.jobTitle || EM_DASH },
     {
       label: 'Ticket Type',
+      key: 'ticketId',
       value: selectedTicket.value
         ? `${selectedTicket.value.name} (${dollars(selectedTicket.value.price)})`
         : EM_DASH,
     },
   ];
-  // Shipping Address is optional (required only with merch, D9); the frame omits it, so show
-  // it only once the attendee has entered one (D35g).
-  if (attendee.shippingAddress) {
-    rows.push({ label: 'Shipping Address', value: attendee.shippingAddress });
+  // Shipping Address is optional (required only with merch, D9): show it once entered, or — after a
+  // failed submit — when it is required-but-missing so its error is visible; otherwise omit it (D35g).
+  if (attendee.shippingAddress || (submitted.value && errors.value.attendee.shippingAddress)) {
+    rows.push({
+      label: 'Shipping Address',
+      key: 'shippingAddress',
+      value: attendee.shippingAddress || EM_DASH,
+    });
   }
-  return rows;
+  return rows.map((r) => ({ ...r, error: attendeeRowError(r.key, r.value) }));
 });
 
 const sessionRows = computed(() =>
@@ -99,6 +122,11 @@ const addonRows = computed(() => {
   }
   return rows;
 });
+
+// Time-conflict errors flag their owning step's section at submit (D9, D36d) — session↔session on
+// Sessions, workshop↔session on Add-ons.
+const sessionErrors = computed(() => (submitted.value ? errors.value.sessions : []));
+const addonErrors = computed(() => (submitted.value ? errors.value.addons : []));
 </script>
 
 <template>
@@ -108,6 +136,8 @@ const addonRows = computed(() => {
     </div>
 
     <div v-else class="flex flex-col gap-6">
+      <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
+
       <h2 class="text-h3 text-neutral">Review Your Registration</h2>
 
       <ReviewSection
@@ -121,6 +151,7 @@ const addonRows = computed(() => {
         title="Selected Sessions"
         edit-label="Edit → Step 2"
         :rows="sessionRows"
+        :errors="sessionErrors"
         empty-message="No sessions selected."
         @edit="goToStep(1)"
       />
@@ -129,6 +160,7 @@ const addonRows = computed(() => {
         title="Add-ons"
         edit-label="Edit → Step 3"
         :rows="addonRows"
+        :errors="addonErrors"
         empty-message="No add-ons selected."
         @edit="goToStep(2)"
       />

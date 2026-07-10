@@ -1,8 +1,9 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import StepAttendee from 'src/components/wizard/StepAttendee.vue';
 import { provideRegistration } from 'src/composables/useRegistration.js';
+import { provideValidation } from 'src/composables/useValidation.js';
 
 installQuasarPlugin();
 
@@ -17,9 +18,13 @@ vi.mock('src/data/facade.js', async () => {
 // StepAttendee injects the wizard store (provide/inject); wrap it in a root that
 // provides one. The injection Symbol is intentionally not exported, so we go through
 // provideRegistration() in a harness setup rather than global.provide.
+let store;
+let validation;
 const Harness = defineComponent({
   setup() {
-    provideRegistration();
+    store = provideRegistration();
+    // Step-1 field validation needs no session/add-on sources.
+    validation = provideValidation(store, {});
     return () => h(StepAttendee);
   },
 });
@@ -113,5 +118,53 @@ describe('StepAttendee (Step 1 — Attendee Info)', () => {
 
     expect(wrapper.find('[aria-invalid="true"]').exists()).toBe(false);
     expect(wrapper.find('.text-danger').exists()).toBe(false);
+  });
+});
+
+describe('StepAttendee (Step 1 — submit-time validation, D36)', () => {
+  const shippingLabel = (wrapper) =>
+    wrapper.findAll('label').find((l) => l.text().includes('Shipping Address'));
+
+  // AC-V-5 — a failed submit reveals the field errors that were deferred (punish late).
+  it('reveals field + ticket errors after a failed submit', async () => {
+    const wrapper = await mountStep();
+    expect(wrapper.find('.text-danger').exists()).toBe(false);
+
+    expect(validation.attemptSubmit()).toBe(false);
+    await nextTick();
+
+    expect(wrapper.find('[aria-invalid="true"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Full Name is required');
+    expect(wrapper.text()).toContain('Please select a ticket type');
+  });
+
+  // AC-V-5 — a fixed field clears its error live, without another submit (reward early).
+  it('clears a field error live once it is fixed', async () => {
+    const wrapper = await mountStep();
+    validation.attemptSubmit();
+    await nextTick();
+    expect(wrapper.text()).toContain('Full Name is required');
+
+    store.attendee.fullName = 'Ada Lovelace';
+    await nextTick();
+    expect(wrapper.text()).not.toContain('Full Name is required');
+  });
+
+  // AC-1.6/1.7 — Shipping Address drops its "(Optional)" label once merch is selected, and
+  // reverts when merch is removed (non-sticky).
+  it('toggles the shipping "(Optional)" label with merch selection', async () => {
+    const wrapper = await mountStep();
+    expect(shippingLabel(wrapper).text()).toContain('(Optional)');
+
+    store.merchSelections.merch1 = { size: 'M', quantity: 1 };
+    await nextTick();
+    // Required now: "(Optional)" drops and the "*" appears (D39).
+    expect(shippingLabel(wrapper).text()).not.toContain('(Optional)');
+    expect(shippingLabel(wrapper).text()).toContain('Shipping Address *');
+
+    delete store.merchSelections.merch1;
+    await nextTick();
+    expect(shippingLabel(wrapper).text()).toContain('(Optional)');
+    expect(shippingLabel(wrapper).text()).not.toContain('Shipping Address *');
   });
 });
