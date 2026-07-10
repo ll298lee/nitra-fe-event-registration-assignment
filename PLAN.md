@@ -553,3 +553,51 @@ AC-3.3/D9 (conflict names the session), AC-3.4/D6 (`s10` touch ≠ conflict), D1
 - full-but-selected deselectable), full-and-conflict → only "Sold Out", AC-3.11 (summary updates
   live). `OrderSummaryPanel.spec.js` — ticket/workshop/merch lines, VIP discount line, non-VIP omits
   it, empty state. `datetime.test.js` — `formatDateTimeRange`.
+
+## feat(addons): step 3 merchandise cards + shipping banner
+
+Step 3 UI part 2 (PR B). Added `MerchCard.vue` (name + neutral price, description, optional size
+`<select>`, −/count/+ quantity stepper capped at the item's `maxQuantity`, "✓ Added to order" footer)
+and `ShippingBanner.vue`, wired into the Merchandise tab of `StepAddons` — replacing its placeholder.
+Selections write `{ size, quantity }` into `merchSelections`, so the existing `useOrderSummary` prices
+them and the running total updates live. Recorded as **D32** (five D30 corrections).
+
+Critical decisions / judgment calls:
+
+- **Merch prices show no cents** ("$35"), unlike the sibling `WorkshopCard` ("$149.00") — the frame
+  draws merch unit prices without cents (verified in-browser); the Order Summary still uses
+  `formatCurrency` ("$35.00"), also per the frame. `WorkshopCard`'s cents are the lone Step-3 outlier,
+  left untouched (out of scope).
+- **Five D30 measured claims corrected from a fresh Dev Mode read + `getComputedStyle` (D32):** price is
+  `text-neutral` not teal; added ring is **1px** `border-brand-emphasis` (not the family's 2px);
+  `#EEF6F7` → `bg-brand-subtle-rest` (by measured hex, not the Figma variable's `muted` label); banner is
+  `rounded-lg` with a bold **"Shipping Information"** title above the body; the card is a static
+  `role=group`, not a `role=checkbox` toggle. Banner sits **above** the card list (frame position).
+- **UnoCSS static-scan trap (caught in the `agent-browser` pass):** the 1px brand-emphasis inset ring
+  first rendered as `box-shadow: none` because the class was built via a `${DROP_SHADOW}` template — and
+  UnoCSS extracts classes by scanning source text, so a spliced token is never generated. Fixed by
+  writing the full `shadow-[…]` literal inline (this 1px-brand ring exists on no other card).
+- **Merch state invariant:** "merch added" is always `quantity >= 1` (used by `anyMerchAdded` and the
+  order summary), never key presence — a size picked before the first `+` leaves a harmless
+  `{ size, quantity: 0 }` entry so the dropdown doesn't snap back. Flagged so the upcoming
+  shipping-required-when-merch validation (AC-1.6) keys off `quantity >= 1`.
+- **Spec-gap fill:** the frames show no disabled −/+ key style, so a disabled key dims its glyph to
+  `text-neutral-disabled` + `cursor-not-allowed`.
+
+Tests: `MerchCard.spec.js` — price no-cents, size selector present/absent (merch1 vs merch2), "max N"
+hint, − disabled at 0 / + disabled at max (merch4), added footer, emit contract. `StepAddons.spec.js`
+— four merch cards in order (AC-3.1), add → store + live total (AC-3.11), size recorded (AC-3.6), qty
+cap at maxQuantity (merch3 → 2), banner exact README copy when added (AC-3.9) / absent when none
+(AC-3.10), decrement-to-0 drops the entry + hides the banner. All 110 tests green; `yarn check` clean;
+pixel parity confirmed vs frame `1149:565`.
+
+## docs(plan): confirm Step 2 stays free-select on stale conflicts (D33)
+
+Recorded a product decision from review discussion: when a workshop is selected first and a
+conflicting session is then added via back-nav, the session stays **freely selectable in Step 2
+with no warning there** — this is README §2.2 (Step 2 defers time-conflict validation to Step 4).
+The stale conflict is surfaced on the Step 3 workshop card ("Overlaps {session}", D10) and, once
+built, at Step 4 submit (AC-4.6). A non-blocking Step 2 indicator was considered and **declined**;
+gating Step 2 or auto-removing the workshop were rejected as README §2.2 / D10 violations. No code
+change — **AC-4.6 (pending validation PR) is the closing mechanism**; the current "nothing happens"
+is only because that Step 4 validation isn't built yet.

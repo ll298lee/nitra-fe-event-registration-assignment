@@ -37,6 +37,9 @@ async function mountStep() {
 const workshopCards = (w) => w.findAll('[role="checkbox"]');
 const cardByName = (w, name) => workshopCards(w).find((c) => c.text().includes(name));
 const tabs = (w) => w.findAll('[role="tab"]');
+const merchCards = (w) => w.findAll('[role="group"]');
+const merchByName = (w, name) => merchCards(w).find((c) => c.text().includes(name));
+const normalizeWs = (s) => s.replace(/\s+/g, ' ').trim();
 
 describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)', () => {
   // AC-3.1 — three category tabs, in order Workshops / Meal Packages / Merchandise.
@@ -155,7 +158,7 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
     expect(ws2.text()).not.toContain('overlaps');
   });
 
-  // AC-3.1 (interaction) — switching tabs swaps the category panel (Meals/Merch pending).
+  // AC-3.1 (interaction) — switching tabs swaps the category panel (Meals still pending).
   it('switches to the Meal Packages / Merchandise tabs', async () => {
     const w = await mountStep();
 
@@ -164,7 +167,7 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
     expect(workshopCards(w)).toHaveLength(0);
 
     await tabs(w)[2].trigger('click');
-    expect(w.find('[role="tabpanel"]').text()).toContain('Merchandise selection is coming');
+    expect(merchCards(w)).toHaveLength(4);
   });
 
   // AC-3.1 (a11y) — the tablist is a single tab stop (roving tabindex) + arrow-key switching.
@@ -187,5 +190,88 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
     await cardByName(w, 'Hands-on Vue.js Testing').trigger('click');
     expect(summary.text()).toContain('Hands-on Vue.js Testing × 1');
     expect(summary.text()).toContain('$149.00');
+  });
+});
+
+const SHIPPING_COPY =
+  'Merchandise items will be shipped to your address one week before the conference. ' +
+  'Please ensure your shipping address in Step 1 is correct.';
+
+describe('StepAddons (Step 3 — Merchandise + shipping banner)', () => {
+  async function gotoMerch() {
+    const w = await mountStep();
+    await tabs(w)[2].trigger('click');
+    return w;
+  }
+  const inc = (card) => card.get('button[aria-label^="Increase"]').trigger('click');
+  const dec = (card) => card.get('button[aria-label^="Decrease"]').trigger('click');
+
+  // AC-3.1 — the Merchandise tab lists all four merch items, in mock order.
+  it('lists the four merchandise items in order', async () => {
+    const w = await gotoMerch();
+    const cards = merchCards(w);
+    expect(cards).toHaveLength(4);
+    expect(cards[0].text()).toContain('Conference T-Shirt');
+    expect(cards[1].text()).toContain('Developer Sticker Pack');
+    expect(cards[2].text()).toContain('Insulated Water Bottle');
+    expect(cards[3].text()).toContain('Laptop Sleeve');
+  });
+
+  // AC-3.11 — adding merch writes { size, quantity } and the order summary updates live.
+  it('adds merch to the store and the running total', async () => {
+    const w = await gotoMerch();
+    await inc(merchByName(w, 'Conference T-Shirt'));
+
+    expect(store.merchSelections.merch1).toEqual({ size: null, quantity: 1 });
+
+    const summary = w.find('[aria-label="Order summary"]');
+    expect(summary.text()).toContain('Conference T-Shirt × 1');
+    expect(summary.text()).toContain('$35.00');
+  });
+
+  // AC-3.6 — a chosen size is recorded on the selection.
+  it('records the chosen size for a sized item', async () => {
+    const w = await gotoMerch();
+    await merchByName(w, 'Conference T-Shirt').get('select').setValue('L');
+    expect(store.merchSelections.merch1.size).toBe('L');
+  });
+
+  // AC-3.6/3.7/3.8, D16 — quantity is capped at the item's own maxQuantity (merch3 → 2).
+  it('caps quantity at the item maxQuantity', async () => {
+    const w = await gotoMerch();
+    const bottle = merchByName(w, 'Insulated Water Bottle'); // max 2
+    await inc(bottle);
+    await inc(bottle);
+    await inc(bottle); // no-op — already at max
+    expect(store.merchSelections.merch3.quantity).toBe(2);
+    expect(bottle.get('button[aria-label^="Increase"]').attributes('disabled')).toBeDefined();
+  });
+
+  // AC-3.9 — the shipping banner shows the exact README copy once any merch is added.
+  it('shows the shipping banner with the exact README copy when merch is added', async () => {
+    const w = await gotoMerch();
+    await inc(merchByName(w, 'Conference T-Shirt'));
+
+    const banner = w.find('[role="note"]');
+    expect(banner.exists()).toBe(true);
+    expect(normalizeWs(banner.text())).toContain(SHIPPING_COPY);
+  });
+
+  // AC-3.10 — no banner when no merch is in the order.
+  it('shows no banner when nothing is added', async () => {
+    const w = await gotoMerch();
+    expect(w.find('[role="note"]').exists()).toBe(false);
+  });
+
+  // Removing the last unit drops the entry and hides the banner (card resets to rest state).
+  it('removes the entry and hides the banner when quantity returns to 0', async () => {
+    const w = await gotoMerch();
+    const tshirt = merchByName(w, 'Conference T-Shirt');
+    await inc(tshirt);
+    expect(w.find('[role="note"]').exists()).toBe(true);
+
+    await dec(tshirt);
+    expect(store.merchSelections.merch1).toBeUndefined();
+    expect(w.find('[role="note"]').exists()).toBe(false);
   });
 });
