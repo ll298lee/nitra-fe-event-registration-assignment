@@ -34,7 +34,7 @@ against those sources.
    exact token for a measured value, **record the discrepancy in `IMPLEMENTATION_PLAN.md` and
    resolve it deliberately** (§4) — do not silently approximate. Pixel parity is a blocking
    verify-gate check via `agent-browser` against the frame (§2.5). The canonical file is:
-   `https://www.figma.com/design/6Jl8Jyv7bETcHg2carNi6d/Nitra-FE-Assessment—v2`
+   `https://www.figma.com/design/euBzD5nFIKWTw1rVd69M6G/Nitra-FE-Assessment---v2--Copy-?node-id=1063-941&m=dev`
 4. **Design tokens only — never hardcode hex.** Use the UnoCSS semantic shortcuts/tokens
    defined in `src/unocss/semantic.js` and `src/unocss/index.js` (e.g. `text-neutral`,
    `bg-surface-l1`, `border-neutral-muted`, `text-h3`). No raw color/typography literals.
@@ -150,15 +150,15 @@ this order (blocking, like the main flow):
 
 ## 3. Which skill to use in which phase (installed this session)
 
-| Phase                 | Skill / MCP                         | Use it for                                                               |
-| --------------------- | ----------------------------------- | ------------------------------------------------------------------------ |
-| Specify (visual)      | **`figma-mcp-free`** MCP            | Read the Figma design → frames, tokens, structure (§4).                  |
-| Implement (framework) | **`quasar-skilld`**                 | Correct Quasar 2 component APIs (QInput, QStepper, QCard, …).            |
-| Implement (Vue)       | **`vue`**, **`vue-best-practices`** | Composition API `<script setup>`, props/emits, composables — in JS.      |
-| Implement (styling)   | **`unocss`**                        | Utility/shortcut usage that reuses the existing semantic tokens.         |
-| Verify (tests)        | **`vue-testing-best-practices`**    | Vitest + Vue Test Utils patterns for business-logic and SFC tests.       |
-| Verify (visual/E2E)   | **`agent-browser`**                 | Drive the running app on `:9001`, screenshot, compare against Figma.     |
-| Review (human)        | **`/code-review`** + `gh` CLI       | Self-review the diff, then open the PR and hand off for approval (§2.6). |
+| Phase                 | Skill / MCP                                                            | Use it for                                                               |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Specify (visual)      | **`figma-dev-mode-mcp-server`** MCP + **`figma-design-to-code`** skill | Read the Figma design → context, tokens, structure (§4).                 |
+| Implement (framework) | **`quasar-skilld`**                                                    | Correct Quasar 2 component APIs (QInput, QStepper, QCard, …).            |
+| Implement (Vue)       | **`vue`**, **`vue-best-practices`**                                    | Composition API `<script setup>`, props/emits, composables — in JS.      |
+| Implement (styling)   | **`unocss`**                                                           | Utility/shortcut usage that reuses the existing semantic tokens.         |
+| Verify (tests)        | **`vue-testing-best-practices`**                                       | Vitest + Vue Test Utils patterns for business-logic and SFC tests.       |
+| Verify (visual/E2E)   | **`agent-browser`**                                                    | Drive the running app on `:9001`, screenshot, compare against Figma.     |
+| Review (human)        | **`/code-review`** + `gh` CLI                                          | Self-review the diff, then open the PR and hand off for approval (§2.6). |
 
 The `vue*`/`unocss` skills show TypeScript — translate every example to plain JS (§1.1).
 
@@ -166,27 +166,32 @@ The `vue*`/`unocss` skills show TypeScript — translate every example to plain 
 
 ## 4. Figma-driven UI workflow (enforced)
 
-UI is implemented _from_ the Figma design, not approximated. Use the **`figma-mcp-free`**
-MCP server (chosen because we lack Dev Mode access to the file — see `tmp.md`). Every tool
-accepts the `figmaUrl` above **or** a `fileId`.
+UI is implemented _from_ the Figma design, not approximated. Use the official **Figma local
+Dev Mode MCP server** (`figma-dev-mode-mcp-server`, served by the Figma **desktop app** — it
+must be running with the file open and the local MCP server enabled), following the
+**`figma-design-to-code`** skill for the read-FROM-Figma workflow. We now have Dev Mode access
+via a **copy** of the file (see the §1.3 URL / `tmp.md`), so the official server replaced the
+earlier `figma-mcp-free` (removed — see `IMPLEMENTATION_PLAN.md` D18). Every tool takes a
+`nodeId` + `fileKey` (extracted from the §1.3 URL).
 
-1. **`list_frames`** — enumerate frames and identify the target for the step you're
-   building.
-2. **`export_tokens`** — pull the frame's design tokens and **reconcile against**
+1. **`get_metadata`** — enumerate the frame's structure (node IDs, layer types, names,
+   positions, sizes) and identify the target node for the step you're building.
+2. **`get_variable_defs`** — pull the node's design variables/tokens and **reconcile against**
    `src/unocss/semantic.js`. If Figma diverges from our tokens, record the discrepancy in
    `IMPLEMENTATION_PLAN.md` and resolve it deliberately — **never silently hardcode a hex
    value** (see §1.4).
-3. **`get_file` / `get_components`** — inspect the frame's layer/component structure to
-   plan the Vue component tree and map Figma components to Quasar components.
-4. **`generate_code { framework: 'vue', figmaUrl + nodeId }`** — _reference only._ Never
-   ship generated markup as-is: rewrite it to **Quasar components + UnoCSS token classes**,
-   in plain JS. **Extract the exact measured values** from the frame — every font
-   size/weight/line-height, height, padding, gap, border width+color, radius, and fill — and
-   map each to the token whose value matches (per the token px in `src/css/typography.scss`
-   and the palette in `src/unocss/colors.js`). Any measured value with **no exact token** is a
-   discrepancy: record it in `IMPLEMENTATION_PLAN.md` §4 and resolve it deliberately (never
-   silently round to a near token). _`list_frames`/`get_file` return multi-MB output — run
-   Figma inspection inside a subagent that returns a concise token-mapped spec._
+3. **`get_design_context`** — the primary design-to-code call: returns reference code + a
+   screenshot + contextual metadata for the node. _Reference only._ Never ship generated
+   markup as-is: rewrite it to **Quasar components + UnoCSS token classes**, in plain JS.
+   **Extract the exact measured values** from the node — every font size/weight/line-height,
+   height, padding, gap, border width+color, radius, and fill — and map each to the token
+   whose value matches (per the token px in `src/css/typography.scss` and the palette in
+   `src/unocss/colors.js`). Any measured value with **no exact token** is a discrepancy:
+   record it in `IMPLEMENTATION_PLAN.md` §4 and resolve it deliberately (never silently round
+   to a near token). _`get_metadata`/`get_design_context` output can be large — run Figma
+   inspection inside a subagent that returns a concise token-mapped spec._
+4. **`get_screenshot`** — pull the node's rendered image for a visual reference alongside the
+   measured values.
 5. **Verify pixel-perfect** — use `agent-browser` to run the app (`yarn dev`; the port may
    drift to `:9001`/`:9002` — confirm the URL) and compare the rendered component against the
    Figma frame at the frame's width. Compare **measured** values element-by-element (computed
@@ -199,9 +204,9 @@ _New frames (scope growth):_ any newly-introduced frame must be **cataloged in
 `src/unocss/semantic.js` before implementation** — same rule as §1.4, no silent hex. This
 is step 4 of the §2 "Scope changes" procedure.
 
-_Fallback:_ the official `claude.ai Figma` MCP (`get_screenshot`, `get_design_context`,
-`get_variable_defs`) gives richer context but needs Dev Mode access we don't have — reach
-for it only if `figma-mcp-free` is insufficient.
+_Fallback:_ the remote **`claude.ai Figma`** MCP exposes the same read tools
+(`get_design_context`, `get_screenshot`, `get_metadata`, `get_variable_defs`) if the local
+desktop server is unavailable — reach for it only if `figma-dev-mode-mcp-server` is down.
 
 ---
 

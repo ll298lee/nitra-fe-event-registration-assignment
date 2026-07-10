@@ -329,3 +329,18 @@ but I had added leading/trailing chevrons (an extraction artifact I wrongly
 "interpreted" into a direction). Removed them — Next/Back/Submit are now text-only,
 matching Figma. Verified in-browser: 0 icons in every footer button. (The completed-
 step **check** glyphs in the stepper stay — those are in Figma.)
+
+## chore: switch Figma read to official Dev Mode MCP + design-to-code skill
+
+Replaced the `figma-mcp-free` MCP server with the official **local Dev Mode** server
+(`figma-dev-mode-mcp-server`, Figma desktop) and installed the read-only
+**`figma-design-to-code`** skill; also repointed the ground-truth Figma URL to a
+Dev-Mode-enabled **copy** of the file (fileId `euBzD5nFIKWTw1rVd69M6G`). Updated
+CLAUDE.md §3/§4 and `tmp.md` to match.
+
+**Judgment call:** the original choice of `figma-mcp-free` was forced by lacking Dev
+Mode access; that no longer holds (the copy grants it), so this supersedes CLAUDE.md
+§4's "no Dev Mode" rationale — recorded as **D18**. Only the read (design→code) skill
+was installed; write-back-to-Figma skills are deliberately excluded. Left the stale
+`mcp__figma-mcp-free__list_frames` allowlist entry for a follow-up (permission-file
+edits are gated), and §4 frame nodeIds still need a confirm against the copy.
