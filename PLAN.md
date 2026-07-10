@@ -952,3 +952,27 @@ to the card's class. An audit of the other selectable cards (`SessionCard`, `Wor
 `MealCard`, `MerchCard`) confirmed they already set `cursor-pointer` — `TicketCard` was the lone
 omission, so the affordance is now consistent across all cards. Verified in-browser: all three
 ticket cards compute `cursor: pointer`.
+
+## feat(ux): validation error experience — scroll-to-error, focus, animated appearance
+
+Fifth UX-polish commit (D43e — a user-expansion theme). The submit button lives in the footer at
+the bottom of the review, but the error banner and flagged sections are at the top — so a failed
+submit could leave the user staring at an unchanged-looking button. This commit makes the failure
+impossible to miss and smooths its appearance.
+
+- **Scroll-to-error + focus.** On a failed submit, `IndexPage.revealErrors()` scrolls the error
+  banner into view (`scrollIntoView`, `block: 'nearest'` so a short page that already shows it does
+  not jump) and moves focus to it. The banner is now a focus target (`tabindex="-1"` +
+  `focus:outline-none`) whose `role="alert"` also announces the errors to assistive tech.
+  `focus({ preventScroll: true })` keeps focus from cancelling the smooth scroll; reduced-motion
+  users get an instant jump (guarded `window.matchMedia?.` so it is also safe in jsdom tests).
+- **Animated appearance.** The banner is wrapped in `<Transition name="fade">` (a reusable global
+  fade added to `app.scss`, with a `prefers-reduced-motion` guard) so it eases in instead of
+  popping.
+- **Smooth error-state transitions.** Added `transition-colors` to the `ReviewSection` card + its
+  heading (the red border/heading now animates in) and to the `FormField` label (its red-on-error
+  colour animates, matching the input border that already transitioned).
+- **Verified in-browser:** empty submit → banner present, `document.activeElement` is the banner,
+  it scrolls into view; the section card goes red with `— (required)` rows and the stepper shows
+  the red "!" step. 195 tests green (the `IndexPage` submit tests exercise `revealErrors` under the
+  matchMedia guard).

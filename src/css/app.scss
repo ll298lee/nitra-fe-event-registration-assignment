@@ -33,3 +33,21 @@ ul,
 ol {
   list-style: none;
 }
+
+// Reusable fade transition for Vue <Transition name="fade"> (e.g. the submit-error banner).
+// Global on purpose: <Transition> applies these classes to a child component's root element,
+// which carries that child's scoped-style attribute, so a component-scoped rule would not match.
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none;
+  }
+}

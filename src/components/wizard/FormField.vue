@@ -25,7 +25,7 @@ const errorId = `${inputId}-error`;
   <div class="flex flex-col gap-1.5">
     <label
       :for="inputId"
-      class="text-sm font-medium"
+      class="text-sm font-medium transition-colors"
       :class="error ? 'text-danger' : 'text-neutral'"
     >
       {{ label }}<span v-if="required"> *</span><span v-if="optional"> (Optional)</span>

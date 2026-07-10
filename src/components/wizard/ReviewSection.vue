@@ -21,11 +21,16 @@ const hasError = computed(() => props.rows.some((r) => r.error) || props.errors.
 
 <template>
   <section
-    class="flex flex-col gap-3 rounded-md border border-solid bg-surface-l1 p-5"
+    class="flex flex-col gap-3 rounded-md border border-solid bg-surface-l1 p-5 transition-colors"
     :class="hasError ? 'border-danger-emphasis' : 'border-neutral-muted'"
   >
     <div class="flex items-center justify-between gap-4">
-      <h3 class="text-subtitle1" :class="hasError ? 'text-danger' : 'text-neutral'">{{ title }}</h3>
+      <h3
+        class="text-subtitle1 transition-colors"
+        :class="hasError ? 'text-danger' : 'text-neutral'"
+      >
+        {{ title }}
+      </h3>
       <button
         type="button"
         class="shrink-0 cursor-pointer rounded-[2px] border-0 bg-transparent text-sm font-semibold text-brand underline transition-colors hover:text-brand-emphasis focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--border-brand-emphasis)]"

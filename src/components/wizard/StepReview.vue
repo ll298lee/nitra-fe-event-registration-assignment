@@ -136,7 +136,9 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
+      <Transition name="fade">
+        <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
+      </Transition>
 
       <h2 class="text-h3 text-neutral">Review Your Registration</h2>
 
