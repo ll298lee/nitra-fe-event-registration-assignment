@@ -344,3 +344,33 @@ Mode access; that no longer holds (the copy grants it), so this supersedes CLAUD
 was installed; write-back-to-Figma skills are deliberately excluded. Left the stale
 `mcp__figma-mcp-free__list_frames` allowlist entry for a follow-up (permission-file
 edits are gated), and §4 frame nodeIds still need a confirm against the copy.
+
+## fix(shell): match Figma exactly via Dev Mode MCP re-audit
+
+The shell's first fidelity pass (#7) was measured with the now-removed `figma-mcp-free`
+server. With the official **Dev Mode MCP** in place (D18), I re-measured the header,
+stepper, and action bar element-by-element (a parallel extraction workflow returning
+token-mapped specs) and fixed every discrepancy, verifying each in-browser with
+`getComputedStyle` at 1440px. Most values already matched; the real gaps:
+
+- **Invented glyphs → real Figma vectors.** The header logo was a Quasar `event` calendar
+  icon — an invented mark. It's actually the **"N Emblem — White"** component (3 white
+  vectors), now inlined as an SVG. The completed-step **check** was the Material `q-icon`
+  (filled) — replaced with Figma's own 2px round-cap stroked check SVG. (Both were exactly
+  the "don't invent Figma details" trap.)
+- **Exact measured values.** Stepper label `text-md`(14) → **`text-[13px] leading-[normal]`**
+  (the earlier round-to-14 was a silent approximation; `leading-[normal]` ≠ Tailwind
+  `leading-normal`=1.5). Connector radius → `rounded-[1px]`. Buttons hug content with net
+  **`px-4`**/**`px-5`** + `min-w-[72px]`/`[88px]` (prior `px-2`/`px-3` were ~16px too narrow);
+  Submit label `text-subtitle1` → **`text-lg font-semibold`** (16/24/610). Step-1 Next copy
+  → verbatim **"Next: Session Selection"**.
+- **Trap — phantom 3px band borders (visual bug).** `border-solid` styles all four sides, but
+  the project has no Tailwind `border-width:0` reset, so unset sides defaulted to `medium`
+  (3px) and rendered faint borders around the header/stepper/footer. Zeroed the unwanted
+  sides (`border-x-0`/`border-t-0`/`border-b-0`) so each band shows only its single 1px
+  divider — same missing-reset root cause behind the earlier `border-solid` gotcha.
+
+**Open question / assumption:** the phantom-border fix is surgical (per-band). The root cause
+is a missing global border reset; a project-wide preflight reset would prevent the whole bug
+class but could shift Quasar component borders in Phase 3, so I left that as a deliberate
+follow-up rather than fold it into a shell PR. Details in `IMPLEMENTATION_PLAN.md` §4.

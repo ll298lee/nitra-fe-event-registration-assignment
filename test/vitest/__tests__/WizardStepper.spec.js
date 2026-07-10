@@ -24,8 +24,11 @@ describe('WizardStepper', () => {
 
   it('renders a check for completed steps and marks the current step with aria-current', () => {
     const wrapper = mount(WizardStepper, { props: { steps, current: 2 } });
-    // Steps 0 and 1 are completed → check icons; steps 2 and 3 show numbers.
-    expect(wrapper.findAll('.q-icon')).toHaveLength(2);
-    expect(wrapper.findAll('button')[2].attributes('aria-current')).toBe('step');
+    // Steps 0 and 1 are completed → Figma check-mark SVG; steps 2 and 3 show numbers.
+    expect(wrapper.findAll('svg')).toHaveLength(2);
+    const buttons = wrapper.findAll('button');
+    expect(buttons[2].attributes('aria-current')).toBe('step');
+    // The current step shows its number, not a check.
+    expect(buttons[2].text()).toContain('3');
   });
 });
