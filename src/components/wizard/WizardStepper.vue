@@ -46,6 +46,7 @@ function connectorClass(i) {
       <button
         type="button"
         class="group flex shrink-0 cursor-pointer items-center gap-2.5 border-0 bg-transparent p-0 transition-opacity hover:opacity-70 focus-visible:outline-none"
+        :aria-label="step.label"
         :aria-current="i === current ? 'step' : undefined"
         :aria-invalid="isError(step) || undefined"
         @click="emit('select', i)"
@@ -81,14 +82,16 @@ function connectorClass(i) {
           </svg>
           <span v-else>{{ i + 1 }}</span>
         </span>
-        <span class="text-[13px] leading-[normal] transition-colors" :class="labelClass(step, i)">{{
-          step.label
-        }}</span>
+        <span
+          class="text-[13px] leading-[normal] transition-colors"
+          :class="[labelClass(step, i), i === current ? 'inline' : 'hidden tablet:!inline']"
+          >{{ step.label }}</span
+        >
       </button>
 
       <span
         v-if="i < steps.length - 1"
-        class="mx-4 h-0.5 flex-1 rounded-[1px] transition-colors"
+        class="mx-2 h-0.5 flex-1 rounded-[1px] transition-colors tablet:mx-4"
         :class="connectorClass(i)"
         aria-hidden="true"
       />

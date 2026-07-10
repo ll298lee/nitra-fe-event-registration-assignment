@@ -143,6 +143,16 @@ describe('StepSessions (Step 2 — Session Selection)', () => {
     expect(w.text()).toContain('1 session selected');
   });
 
+  // AC-R-2 (Phase-4 responsive, D44) — the session grid stacks to one column below the tablet
+  // breakpoint and uses two columns from 768px up. Class presence guards the VIS check.
+  it('carries the responsive single→two column classes on the session grid', async () => {
+    const w = await mountStep();
+    const panel = w.find('[role="tabpanel"]');
+
+    expect(panel.classes()).toContain('grid-cols-1');
+    expect(panel.classes()).toContain('tablet:grid-cols-2');
+  });
+
   // D43(b) — skeletons stand in while sessions load, then clear for the day tabs + cards.
   it('shows skeletons while sessions load, then the session cards', async () => {
     const w = mount(Harness); // do NOT flush — assert the loading branch first

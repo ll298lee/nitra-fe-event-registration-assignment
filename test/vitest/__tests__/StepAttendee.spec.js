@@ -119,6 +119,22 @@ describe('StepAttendee (Step 1 — Attendee Info)', () => {
     expect(wrapper.find('[aria-invalid="true"]').exists()).toBe(false);
     expect(wrapper.find('.text-danger').exists()).toBe(false);
   });
+
+  // AC-R-1 (Phase-4 responsive, D44) — the ticket cards stack to one column below the tablet
+  // breakpoint and revert to three from 768px up; the two-up name/email + phone/company rows
+  // stack (column) below tablet and go side-by-side from 768px. Class presence is the automated
+  // guard for the VIS breakpoint check (jsdom applies no media queries).
+  it('carries the responsive stack→grid classes for tickets and form rows', async () => {
+    const wrapper = await mountStep();
+
+    const group = wrapper.find('[role="radiogroup"]');
+    expect(group.classes()).toContain('grid-cols-1');
+    expect(group.classes()).toContain('tablet:grid-cols-3');
+
+    const twoUpRows = wrapper.findAll('.tablet\\:flex-row');
+    expect(twoUpRows.length).toBe(2);
+    twoUpRows.forEach((row) => expect(row.classes()).toContain('flex-col'));
+  });
 });
 
 describe('StepAttendee (Step 1 — submit-time validation, D36)', () => {
