@@ -5,7 +5,7 @@
 
 <template>
   <div
-    class="flex items-start gap-3 rounded-lg border border-solid border-info-opacity bg-info-subtle-rest p-4"
+    class="flex flex-nowrap items-start gap-3 rounded-lg border border-solid border-info-opacity bg-info-subtle-rest p-4"
     role="note"
   >
     <svg
@@ -20,7 +20,7 @@
       />
     </svg>
 
-    <div class="flex flex-col gap-1">
+    <div class="flex min-w-0 flex-col gap-1">
       <span class="text-subtitle2 text-neutral">Shipping Information</span>
       <p class="text-md font-regular text-neutral">
         Merchandise items will be shipped to your address one week before the conference. Please

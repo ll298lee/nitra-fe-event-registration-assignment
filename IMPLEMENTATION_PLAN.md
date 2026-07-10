@@ -364,6 +364,21 @@ text-danger` (12/16/485), each a literal "• Step {N}: {msg}" (bullet is text, 
   Figma placeholders, not literal copy. The confirmation number is generated at runtime.
 - **Plugin gotcha:** `quasar.config.js` `framework.plugins` is currently `[]`. If Notify/Dialog are
   used for affordances they **must** be registered there or they silently no-op.
+- **`ShippingBanner` icon-on-top bug → `flex-nowrap` (frame `1220:2186`).** The banner (icon +
+  title/body column) rendered with the **icon stacked above** the text, not to its left: Quasar's
+  core `.flex` rule forces `flex-wrap: wrap` (the [[quasar-flex-ua-defaults-layout]] gotcha), so the
+  wide body paragraph wrapped the whole column below the icon. Fixed by adding **`flex-nowrap`** to
+  the row (+ `min-w-0` on the column so the paragraph wraps internally). Verified in-browser: the
+  container is now `flex-wrap: nowrap`, icon and content share the top edge, icon left of content —
+  matching `1220:2186`.
+- **Font-weight verification (user-requested check; no code change).** The input label
+  (`FormField`, `text-sm font-medium`) and the stepper labels (`WizardStepper`: current/errored
+  `font-semibold`, completed `font-medium`, upcoming `font-regular`) were re-checked against Figma.
+  Every element maps to the **correct weight tier**; the only divergences are inherent token
+  quantization — Figma's `body/sm/medium` label is weight **550** and the stepper uses **unbound raw
+  Inter styles** (600 / 500 / 400), while the design system exposes only `485/570/610/630`. The
+  chosen tokens (`font-medium` 570, `font-semibold` 610, `font-regular` 485) are the nearest and
+  correct; no closer token exists, so nothing changed.
 
 ---
 

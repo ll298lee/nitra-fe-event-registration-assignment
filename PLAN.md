@@ -752,3 +752,24 @@ clean; verified in-browser (label "Shipping Address \*", resting border #5c6970 
 Tests: `FormField.spec.js` — a required field shows the "\*" and a darker resting border (no focus).
 `StepAttendee.spec.js` — the shipping label toggles between "(Optional)" and "Shipping Address \*" as
 merch is added/removed.
+
+## fix(step-3): shipping banner icon left of content + font-weight verification
+
+Two post-review touch-ups on PR #17.
+
+- **Shipping banner icon position** (`ShippingBanner`, frame `1220:2186`): the info icon rendered
+  **stacked above** the title/body instead of to its left. Cause: Quasar's core `.flex` rule forces
+  `flex-wrap: wrap`, so the wide body paragraph wrapped the whole text column below the icon. Fixed
+  with **`flex-nowrap`** on the row (+ `min-w-0` on the column so the paragraph wraps internally).
+  Verified in-browser: container `flex-wrap: nowrap`, icon and content share the top edge with the
+  icon to the left — matching the frame.
+- **Font-weight check** (user-requested; **no code change**): re-verified the input-label weight
+  (`FormField` `font-medium`) and the stepper label weights (current/errored `font-semibold`,
+  completed `font-medium`, upcoming `font-regular`) against Figma. Every element is in the **correct
+  weight tier**; the only divergences are inherent token quantization (Figma `body/sm/medium` = 550
+  and the stepper's unbound raw Inter styles 600/500/400 vs the design system's 485/570/610/630) —
+  the chosen tokens are the nearest available, so nothing changed. Recorded in `IMPLEMENTATION_PLAN.md`
+  §4.
+
+179 tests green, `yarn check` clean. Tests: `StepAddons.spec.js` gains a `flex-nowrap` assertion on
+the banner to guard the icon-on-top regression; the font check needed no code, so no new test.

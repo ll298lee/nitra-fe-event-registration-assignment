@@ -255,6 +255,8 @@ describe('StepAddons (Step 3 — Merchandise + shipping banner)', () => {
     const banner = w.find('[role="note"]');
     expect(banner.exists()).toBe(true);
     expect(normalizeWs(banner.text())).toContain(SHIPPING_COPY);
+    // Guards the icon-left layout against the Quasar `.flex` wrap regression (icon-on-top).
+    expect(banner.classes()).toContain('flex-nowrap');
   });
 
   // AC-3.10 — no banner when no merch is in the order.
