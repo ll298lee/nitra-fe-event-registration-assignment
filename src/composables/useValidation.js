@@ -1,6 +1,11 @@
 import { ref, computed, toValue, provide, inject } from 'vue';
 import { useRegistration } from './useRegistration.js';
-import { validateAll, errorStepKeys, isValid as computeIsValid } from '../logic/validation.js';
+import {
+  validateAll,
+  errorStepKeys,
+  isValid as computeIsValid,
+  summarizeErrors,
+} from '../logic/validation.js';
 
 /**
  * Reactive adapter over the pure `validation.js` logic (IMPLEMENTATION_PLAN.md D36).
@@ -50,6 +55,12 @@ export function createValidation(registration, sources = {}) {
   const isValid = computed(() => computeIsValid(errors.value));
   const errorSteps = computed(() => errorStepKeys(errors.value));
 
+  // Submitted-gated inputs for the Step-4 error affordances (D37): the wizard-step keys the
+  // stepper flags as errored, and the flat "Step N: {message}" list the error banner renders.
+  // Empty until the first failed submit, per the deferred-validation model (D7).
+  const errorStepsShown = computed(() => (submitted.value ? errorSteps.value : []));
+  const errorSummary = computed(() => (submitted.value ? summarizeErrors(errors.value) : []));
+
   /**
    * Run the unified submit-time validation (README §4.4): mark the form submitted so
    * errors become visible, and report whether it is valid. Pure w.r.t. the store (D10).
@@ -75,7 +86,17 @@ export function createValidation(registration, sources = {}) {
     return submitted.value ? (errors.value.attendee[key] ?? '') : '';
   }
 
-  return { submitted, errors, isValid, errorSteps, attemptSubmit, reset, attendeeError };
+  return {
+    submitted,
+    errors,
+    isValid,
+    errorSteps,
+    errorStepsShown,
+    errorSummary,
+    attemptSubmit,
+    reset,
+    attendeeError,
+  };
 }
 
 /**

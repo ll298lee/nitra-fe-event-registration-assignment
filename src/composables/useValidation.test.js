@@ -81,6 +81,20 @@ describe('useValidation — reward early, punish late (D7/D36, AC-V-5)', () => {
     expect(validation.submitted.value).toBe(false);
     expect(validation.attendeeError('fullName')).toBe('');
   });
+
+  // D37 — the submitted-gated banner list + stepper keys are empty pre-submit and populated after.
+  it('exposes a submitted-gated error summary + stepper keys for the banner', () => {
+    const { reg, validation } = setup();
+    expect(validation.errorSummary.value).toEqual([]);
+    expect(validation.errorStepsShown.value).toEqual([]);
+
+    fillAttendee(reg);
+    reg.attendee.phone = ''; // one missing field
+    validation.attemptSubmit();
+
+    expect(validation.errorSummary.value).toEqual(['Step 1: Phone is required']);
+    expect(validation.errorStepsShown.value).toEqual(['attendee']);
+  });
 });
 
 describe('useValidation — conflicts & cross-step (AC-4.5/4.6/4.9, D9/D36)', () => {

@@ -19,7 +19,15 @@ const { currentStep, goToStep, next, prev, isFirstStep, isLastStep } = registrat
 const eventName = ref('');
 const sessions = ref([]);
 const addons = ref([]);
-const { attemptSubmit } = provideValidation(registration, { sessions, addons });
+const { attemptSubmit, submitted, isValid, errorStepsShown } = provideValidation(registration, {
+  sessions,
+  addons,
+});
+
+// After a failed submit the primary button is disabled until the errors clear (D37); it re-enables
+// live as they are fixed (reward early, D7). Before the first submit it stays enabled — clicking it
+// is what runs validation.
+const submitDisabled = computed(() => isLastStep.value && submitted.value && !isValid.value);
 
 onMounted(async () => {
   const [event, sessionList, addonList] = await Promise.all([
@@ -84,7 +92,12 @@ function onPrimary() {
     </header>
 
     <div class="border-x-0 border-b border-t-0 border-solid divider-default px-30 py-6">
-      <WizardStepper :steps="STEPS" :current="currentStep" @select="goToStep" />
+      <WizardStepper
+        :steps="STEPS"
+        :current="currentStep"
+        :error-keys="errorStepsShown"
+        @select="goToStep"
+      />
     </div>
 
     <main class="flex flex-1 flex-col gap-8 px-30 py-10">
@@ -111,8 +124,9 @@ function onPrimary() {
       </button>
       <button
         type="button"
-        class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active"
+        class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active disabled:cursor-not-allowed disabled:!opacity-50"
         :class="primaryClass"
+        :disabled="submitDisabled"
         @click="onPrimary"
       >
         {{ primaryLabel }}

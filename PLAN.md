@@ -695,3 +695,43 @@ value shown flagged, session/stale-workshop conflict rows (kept, D10), merch-shi
 live revert of a section's error state, and a valid submit leaving every section clean.
 `StepAttendee.spec.js` — field + ticket errors after failed submit, live-clear, shipping "(Optional)"
 toggle.
+
+## feat(validation): step-4 error affordances + step-1 input focus/error states
+
+A round of reviewer/user feedback on the open PR #17, all grounded in Figma frames. **Step-4 error
+state (D37, frame `1076:904`):** I had declined a stepper badge in D36f after inspecting only the
+Attendee sub-frame (`1076:936`); the user pointed to the full error frame `1076:904`, so **D37
+supersedes D36f** (recorded, not silently). Added a `WizardStepper` error state (red circle + white
+"!" glyph + red label for an errored step, and the **connector after it turns gray**), a new
+`ErrorBanner` (role="alert", "Please fix…" heading + "• Step N: {message}" bullets), and a **disabled
+Submit** in the error state. **Step-1 input states (D38, frame `1203:587`):** `FormField` now
+**darkens its border on focus without thickening** (dropped the focus ring + the off-palette teal),
+and an **errored field stays red-bordered even when focused**, with the whole label red. Measured
+parity vs both frames via `agent-browser`. 178 tests green, `yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **D37 supersedes D36f** — reasoned from an incomplete (Attendee-only) frame; the full `1076:904`
+  is the visual truth. The stepper error style **overrides** completed/current/upcoming, and the
+  connector **after** an errored step reverts to gray (`bg-surface-l2`) while connectors after
+  completed steps stay teal (confirmed against the stepper node `1101:1070`).
+- **Banner copy** uses the app's **canonical `validation.js` messages** ("Step 1: Phone is required"),
+  not the frame's mock wording, to keep a single message source (D34d); the heading is verbatim.
+  `summarizeErrors` flattens the per-step map to wizard-ordered "Step N: {msg}" lines.
+- **Disabled Submit = 50% opacity** (frame). Quasar's global `[disabled]{opacity:.6!important}` beat a
+  plain `disabled:opacity-50`, so I matched the frame's 0.5 with **`disabled:!opacity-50`** (verified
+  in-browser). It re-enables live as the errors clear (reward early, D7).
+- **Input focus = darken, not thicken (D38).** The states node `1203:587` has no teal and all-1px
+  borders; focus darkens to `border-neutral-emphasis` (#5c6970). Read the node's darker-gray column as
+  the **focus** darken rather than a persistent required border (a required border would contradict the
+  Step-1 frame `1069:968`, which draws required fields light). **Deferred/flagged:** the node shows a
+  required "Shipping Address \*" asterisk — not added, since `1069:968` shows no asterisks and a "\*"
+  only on shipping would be inconsistent. **A11y:** dropping the focus ring per the user weakens the
+  keyboard-focus cue to a border-colour darken — a deliberate fidelity-over-a11y tradeoff.
+
+Tests: `validation.test.js` — `summarizeErrors`. `useValidation.test.js` — submitted-gated
+`errorSummary`/`errorStepsShown`. `WizardStepper.spec.js` — errored step flagged with the "!" glyph
+overriding the check + the gray connector. `StepReview.spec.js` — the banner appears after a failed
+submit. `IndexPage.spec.js` — end-to-end: a failed submit marks the stepper, disables Submit, shows
+the banner; and Submit re-enables once the form is fixed. `FormField.spec.js` (new) — rest/focus/error
+border classes (darken-not-thicken, red-even-when-focused, red error label).

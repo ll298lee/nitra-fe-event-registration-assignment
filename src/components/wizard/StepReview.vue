@@ -6,6 +6,7 @@ import { useValidation } from '../../composables/useValidation.js';
 import { formatDateTime } from '../../utils/datetime.js';
 import ReviewSection from './ReviewSection.vue';
 import PricingSummaryCard from './PricingSummaryCard.vue';
+import ErrorBanner from './ErrorBanner.vue';
 
 // Step 4 — Review & Submit (D35/D36). A single-column, read-only summary of every Step 1–3
 // selection plus the itemized pricing; each section's Edit control jumps back to its step, with
@@ -23,7 +24,7 @@ const {
   goToStep,
 } = useRegistration();
 
-const { submitted, errors } = useValidation();
+const { submitted, errors, errorSummary } = useValidation();
 
 const ticketTypes = ref([]);
 const sessions = ref([]);
@@ -135,6 +136,8 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
     </div>
 
     <div v-else class="flex flex-col gap-6">
+      <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
+
       <h2 class="text-h3 text-neutral">Review Your Registration</h2>
 
       <ReviewSection

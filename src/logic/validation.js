@@ -209,3 +209,24 @@ export function errorStepKeys(errors = {}) {
 export function isValid(errors) {
   return errorStepKeys(errors).length === 0;
 }
+
+// 1-based wizard step number for each error group, for the submit-error summary (D37).
+const STEP_NUMBER = { attendee: 1, sessions: 2, addons: 3 };
+
+/**
+ * Flatten a `validateAll` result into a wizard-ordered list of "Step {N}: {message}" strings
+ * for the Step-4 error-summary banner (D37, README §4.5). One entry per individual error
+ * (each missing/invalid field, each time conflict) — attendee first, then sessions, then addons.
+ * @param {ReturnType<typeof validateAll>} [errors]
+ * @returns {string[]}
+ */
+export function summarizeErrors(errors = {}) {
+  const lines = [];
+  for (const message of Object.values(errors.attendee ?? {})) {
+    lines.push(`Step ${STEP_NUMBER.attendee}: ${message}`);
+  }
+  for (const message of errors.sessions ?? [])
+    lines.push(`Step ${STEP_NUMBER.sessions}: ${message}`);
+  for (const message of errors.addons ?? []) lines.push(`Step ${STEP_NUMBER.addons}: ${message}`);
+  return lines;
+}

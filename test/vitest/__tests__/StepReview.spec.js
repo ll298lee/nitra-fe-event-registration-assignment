@@ -249,6 +249,21 @@ describe('StepReview (Step 4 — submit-time error display, D36)', () => {
     expect(attendee.text()).toContain('— (required)'); // missing fields + Ticket Type
   });
 
+  // D37 / AC-4.5 — the error-summary banner appears after a failed submit and lists each error.
+  it('renders the error-summary banner after a failed submit', async () => {
+    const w = await mountStep();
+    expect(w.find('[role="alert"]').exists()).toBe(false); // none before submit
+
+    validation.attemptSubmit();
+    await nextTick();
+
+    const banner = w.find('[role="alert"]');
+    expect(banner.exists()).toBe(true);
+    expect(banner.text()).toContain('Please fix the following errors before submitting');
+    expect(banner.text()).toContain('Step 1: Full Name is required');
+    expect(banner.text()).toContain('Step 1: Please select a ticket type');
+  });
+
   // AC-4.9 — a session↔session conflict is surfaced on the Sessions card.
   it('surfaces a session conflict on the Sessions card', async () => {
     const w = await mountStep();

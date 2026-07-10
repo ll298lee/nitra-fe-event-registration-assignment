@@ -9,6 +9,7 @@ import {
   validateAll,
   errorStepKeys,
   isValid,
+  summarizeErrors,
 } from './validation.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
@@ -264,5 +265,28 @@ describe('errorStepKeys / isValid — empty-object tolerance', () => {
     expect(errorStepKeys({})).toEqual([]);
     expect(errorStepKeys(undefined)).toEqual([]);
     expect(isValid({})).toBe(true);
+  });
+});
+
+describe('summarizeErrors — Step-4 error banner list (D37, AC-4.5)', () => {
+  // Flattens the per-step map to wizard-ordered "Step N: {message}" lines, one per error.
+  it('prefixes each error with its 1-based wizard step, in order', () => {
+    const errors = {
+      attendee: { phone: 'Phone is required', company: 'Company is required' },
+      sessions: ['A overlaps with B'],
+      addons: ['Workshop overlaps with C'],
+    };
+    expect(summarizeErrors(errors)).toEqual([
+      'Step 1: Phone is required',
+      'Step 1: Company is required',
+      'Step 2: A overlaps with B',
+      'Step 3: Workshop overlaps with C',
+    ]);
+  });
+
+  it('returns [] for a clean / partial result', () => {
+    expect(summarizeErrors({ attendee: {}, sessions: [], addons: [] })).toEqual([]);
+    expect(summarizeErrors({})).toEqual([]);
+    expect(summarizeErrors(undefined)).toEqual([]);
   });
 });
