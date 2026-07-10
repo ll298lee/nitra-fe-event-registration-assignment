@@ -481,3 +481,29 @@ Tests: `StepSessions.spec.js` — AC-2.1 (day tabs + grouping + roving-tabindex/
 AC-2.2 (card content + live counter), AC-2.3/Cap-4 (only `s2`/`s9` full + not selectable),
 AC-2.6 (co-select conflicting `s4`+`s5`), AC-2.7 (no ticket gating), plus toggle/multi-select.
 `datetime.test.js` — `formatDayLabel` wall-clock ("Nov 15"/"Nov 16", no local shift).
+
+## feat(pricing): useOrderSummary computed order totals + VIP workshop discount
+
+The pure pricing engine for Step 3's running total and Step 4's breakdown, split ahead of the
+add-ons UI (like the foundation PR #6, and small enough to review on its own). `createOrderSummary`
+is **fully computed, zero watchers** (D3): ticket line, workshop/meal/merch lines, a combined
+`lineItems` (ticket-first, then Workshops→Meals→Merch), the VIP workshop-only discount, subtotal,
+and grand total. `useOrderSummary` is the provide/inject wrapper; `sources` accept refs/getters via
+`toValue` so a component can pass still-loading facade data. Recorded as **D26**.
+
+Critical decisions / judgment calls:
+
+- **Discount is structural, not conditional (D11).** It is computed only from `workshopLines`, so
+  meal/merch/ticket amounts are never passed to `workshopDiscountAmount` — nothing else _can_ be
+  discounted (AC-P-3/P-4). Exposed as a positive number; the UI decides the display shape.
+- **Discount display shape stays open (§7).** Separate `−$14.90` line vs struck-through per-workshop
+  price is Figma-blocked — a UI concern deferred to the Step 3 add-ons PR; the engine is agnostic.
+- **Merch shape `{ size, quantity }`** matches the store + `useRegistration.test.js`; quantity-max is
+  the picker UI's job, not the summary's (D16). Zero-quantity and unknown-id selections drop out.
+- **Numbers independently re-derived** from the raw mocks by a verification workflow (two blind
+  derivations + an adversarial correctness review) before the tests were trusted.
+
+Tests: `useOrderSummary.test.js` — AC-P-2 (VIP+ws1 → $14.90 / net $134.10 / $733.10), AC-P-3/P-4
+(workshops-only), AC-P-5 (General/Student → $0), AC-P-6 (killer ticket-switch $733.10→$448.00),
+AC-P-7 (full cart VIP $848.10 / General $563.00), AC-4.2 (itemized lines + order), AC-3.11 (live
+recompute), merch quantity/size + zero-qty/unknown-id edges, and the provide/inject wrapper.
