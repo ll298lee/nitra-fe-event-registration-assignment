@@ -82,6 +82,9 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
 | **D17** | **Data-edge robustness** (from the `/code-review` prep pass): missing `registered` reads as 0 (keeps `isFull`/`remainingSpots` consistent); an add-on time slot is attached only when **both** `date` and `endDate` are present (no Invalid Date); the confirmation number draws 8 uniform `[A-Z0-9]` chars. Downstream `conflicts`/`capacity` deliberately **trust the normalized shape** and do not re-validate — the "normalize once at the edge" invariant is the contract. | The facade (D1) is designed to be swapped for a real `fetch`; hardening the seam (not every downstream caller) keeps partial/real payloads from silently corrupting capacity or conflict results without duplicating validation everywhere.                                                                          |
 | **D18** | **Switch the Figma read path** from `figma-mcp-free` to the official **local Dev Mode MCP** (`figma-dev-mode-mcp-server`) + the **`figma-design-to-code`** skill, reading a **Dev-Mode-enabled copy** of the file (fileId `euBzD5nFIKWTw1rVd69M6G`; ground-truth URL updated in CLAUDE.md §1.3 / §1 above). Only the read (design→code) skill is installed — write-back-to-Figma skills are excluded. Permission allowlist + §4 nodeIds to be re-confirmed against the copy.    | The copy grants the Dev Mode access we originally lacked (the reason `figma-mcp-free` was chosen). The official server gives targeted `get_design_context`/`get_variable_defs`/`get_metadata` and first-party token fidelity vs. the open-source server; supersedes the CLAUDE.md §4 "no Dev Mode access" rationale. |
 
+| **D20** | **Ticket-row layout is grid + box-shadow ring, height pixel-stable across selection.** (a) `src/css/app.scss` gains a global `h1–h6,p,ul,ol { margin:0; padding:0 }` (+ `list-style:none`) normalize; (b) the ticket row is **CSS grid** (`grid-cols-3`), not flex; (c) the selected/unselected ring is an **inset `box-shadow`** (token vars, no hex) with the button set `border-0`; (d) the "✓ Selected" badge is always rendered and toggled with `invisible`. Result: card = **288px exactly**, identical across none/General/VIP/Student. | Quasar's base CSS re-adds UA margins (h2 0.83em, `<p>` 16px, `<ul>` 40px indent) that inflated every gap; Quasar's `.flex` helper forces `flex-wrap:wrap` and `flex:1 1 0%` items over-grow the flex cross-size (+16px); the UA `<button>` border is 2px and a 1px→2px border-width change on select shifted the grid row. Grid + shadow-ring + `border-0` + badge-reservation remove every source of selection-time layout shift (user-reported). |
+| **D21** | **A11y + efficiency hardening from the `/code-review` prep pass.** (a) The ticket group now implements the full **WAI-ARIA radiogroup pattern** — roving tabindex (active radio = single tab stop) + Arrow/Home/End selection with focus management — instead of over-promising `role=radio` with no keyboard behavior; (b) Step 1 gets a **`sr-only` `<h1>`** (the step label) so the page has a top-level heading (the frame shows no visible title) — h2 sections nest correctly beneath it; (c) `FormField` adds a **`focus-visible` ring** (token `box-shadow`, no layout shift) since `outline-none` + a 1px border swap is a weak focus indicator; (d) **`fetchEvent` memoizes** its promise so the header + Step 1 share one fetch and revisiting Step 1 never re-incurs latency. | Confirmed findings from the high-recall review. **Dismissed (recorded, not bugs):** ticket price uses `${{price}}` not `formatCurrency` — Figma shows `$299` (no cents); the $X,XXX.XX formatter is for the Step 3/4 totals. "Next: Session Selection" vs stepper "Sessions" — both verbatim from Figma. The app.scss normalize's global blast radius is deliberate (Tailwind-Preflight-style; Quasar `.q-*` rules out-specify it). Real error/retry UI for a failing fetch is deferred to the real-integration phase (the mock never rejects). |
+
 **New dependency introduced:** `vue-i18n` (per D14) — the only planned addition; rationale above.
 
 ---
@@ -151,6 +154,27 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
     stepper band, and footer. Added `border-x-0`/`border-t-0`/`border-b-0` so each band shows only
     its single 1px `divider-default`. (Same missing-reset root cause behind the earlier
     "border needs explicit `border-solid`" gotcha.)
+- **Step 1 — Attendee Info (frame `1069:968`) — measured → token (verified in-browser via
+  `getComputedStyle` @ 1440px):** the content begins directly with the ticket section — **no
+  page/step title** (the shell no longer renders one for Step 1). "Select Ticket Type" =
+  `text-subtitle1` (16/20/610); "Attendee Information" = `text-h3` (24/28/630). Field labels
+  `text-sm font-medium` (12/16/570); inputs `h-11` (44px) `px-3 py-2.5`, 1px `border-neutral-muted`,
+  `rounded-md` (6px), `bg-surface-l0`, value/placeholder `text-lg font-regular` (16/24),
+  `placeholder:text-neutral-quiet`. Cards `p-5`/`rounded-md`/`bg-surface-l1`/`gap-3`; name+price
+  `text-subtitle1`; description + perks `text-sm font-regular text-neutral-muted`; perk-row gap
+  12px, icon→text gap 8px. Layout: ticket row `grid-cols-3 gap-4`; section gaps 32/16/32; form rows
+  `gap-5` (20) × cols `gap-6` (24). Card = **288px exactly**, pixel-stable across all selections (D20).
+  - **Discrepancies (no exact token — recorded, not silently rounded):** (1) perk icon = Figma's
+    FontAwesome-6 solid **`circle-check`** (node `1089:985`), inlined as an exact SVG (viewBox
+    `0 0 16 16`, `fill=currentColor`); its Figma fill is **black with no bound colour variable** →
+    mapped to `text-neutral` (nearest), explicitly **not** teal/green. (2) "✓ Selected" badge type is
+    **11px/14** (`body/xs`) — no token → arbitrary `text-[11px] leading-[14px] font-medium`; the ✓ is a
+    literal U+2713 glyph in the text (not an icon); nested 5+4 / 3px padding → `px-[9px] py-[3px]`. (3)
+    card dual drop-shadow has no token → arbitrary two-layer `shadow-[…]`. (4) the card's visible edge
+    is an **inset box-shadow ring** (D20), not a border, so it contributes 0px to the 288.
+  - **Full Name / Email placeholders** ("Enter your full name" / "…email address") are not shown in
+    the frame (it shows sample filled values) — chosen to match the other fields' "Enter your …"
+    pattern (judgment call).
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
@@ -449,8 +473,8 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 
 ### Phase 3 — Steps
 
-- [ ] `feat(attendee)` form fields, no inline validation (AC-1.1, AC-1.5); shipping optional here.
-- [ ] `feat(attendee)` ticket cards, prices/perks from data (AC-1.2–1.4).
+- [x] `feat(attendee)` form fields, no inline validation (AC-1.1, AC-1.5); shipping optional here.
+- [x] `feat(attendee)` ticket cards, prices/perks from data (AC-1.2–1.4).
 - [ ] `feat(sessions)` grouped-by-day, capacity states, remaining spots, track badges (AC-2.*, D12).
 - [ ] `feat(addons)` grouped by category in order Workshops/Meals/Merch (AC-3.1).
 - [ ] `feat(addons)` disable workshops conflicting with selected sessions (AC-3.3–3.5, D9).
@@ -530,9 +554,10 @@ Per-PR record of the human `review` gate — one row per merged PR (a PR is the 
 sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
 agent never self-approves.
 
-| PR                                                                              | Theme / branch                                                                                                                                                       | Reviewer  | Status                           |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
-| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests)                                          | ll298lee  | **Merged** (2026-07-09)          |
-| [#7](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/7) | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper                                                 | ll298lee  | **Merged**                       |
-| [#8](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/8) | `chore/figma-dev-mode-mcp` — switch Figma read to official Dev Mode MCP + `figma-design-to-code` skill (D18)                                                         | ll298lee  | **Merged**                       |
-| #TBD                                                                            | `fix/shell-devmode-reaudit` — shell re-verified against Dev Mode MCP: real N-emblem + stepper check SVGs, 13px labels, exact button padding/copy, phantom-border fix | _pending_ | **Open — awaiting human review** |
+| PR                                                                              | Theme / branch                                                                                                                                                              | Reviewer  | Status                           |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
+| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests)                                                 | ll298lee  | **Merged** (2026-07-09)          |
+| [#7](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/7) | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper                                                        | ll298lee  | **Merged**                       |
+| [#8](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/8) | `chore/figma-dev-mode-mcp` — switch Figma read to official Dev Mode MCP + `figma-design-to-code` skill (D18)                                                                | ll298lee  | **Merged**                       |
+| [#9](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/9) | `fix/shell-devmode-reaudit` — shell re-verified against Dev Mode MCP: real N-emblem + stepper check SVGs, 13px labels, exact button padding/copy, phantom-border fix        | ll298lee  | **Merged** (2026-07-10)          |
+| #TBD                                                                            | `feat/step-1-attendee-info` — Step 1 Attendee Info: ticket cards (single-select, circle-check perks, stable-height selection) + attendee form; + code-comment policy (§1.7) | _pending_ | **Open — awaiting human review** |
