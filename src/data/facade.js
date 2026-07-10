@@ -19,12 +19,19 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// The event (name + ticket types) is immutable reference data read by both the header and
+// Step 1, and Step 1 remounts on every visit. Cache the in-flight promise so it is fetched
+// once and revisiting a step never re-incurs the latency or a second round-trip.
+let eventPromise = null;
+
 /**
  * @returns {Promise<typeof event>}
  */
-export async function fetchEvent() {
-  await delay(SIMULATED_LATENCY_MS);
-  return event;
+export function fetchEvent() {
+  if (!eventPromise) {
+    eventPromise = delay(SIMULATED_LATENCY_MS).then(() => event);
+  }
+  return eventPromise;
 }
 
 /**

@@ -374,3 +374,72 @@ token-mapped specs) and fixed every discrepancy, verifying each in-browser with
 is a missing global border reset; a project-wide preflight reset would prevent the whole bug
 class but could shift Quasar component borders in Phase 3, so I left that as a deliberate
 follow-up rather than fold it into a shell PR. Details in `IMPLEMENTATION_PLAN.md` §4.
+
+## feat(attendee): Step 1 attendee form + ticket selection
+
+Step 1 (frame `1069:968`), built to exact measured values and verified in-browser with
+`getComputedStyle` @1440px: `FormField` (tokenized native input, carries an `error` contract
+for Step 4), `TicketCard` (single-select, `circle-check` perks, "✓ Selected" badge),
+`StepAttendee` (ticket grid + attendee form), wired into `IndexPage` (Step 1 renders; Steps
+2–4 keep a placeholder). No inline validation — deferred to Step 4 (AC-1.5).
+
+Critical decisions / judgment calls:
+
+- **No page/step title on Step 1.** The frame's content starts directly at "Select Ticket
+  Type"; the shell no longer renders a step title for Step 0. The only body heading is
+  "Attendee Information" (`text-h3`), distinct from the smaller "Select Ticket Type"
+  (`text-subtitle1`).
+- **Selection never shifts layout (D20)** — after review feedback that switching tickets
+  changed the container height, the card is now pixel-stable at **288px** across all
+  selections: the ticket row is **CSS grid** (Quasar's `.flex` helper forces
+  `flex-wrap:wrap`, and `flex:1 1 0%` items over-grow the flex cross-size by ~16px); the
+  selection ring is an **inset `box-shadow`** (token vars, no hex) with the button `border-0`,
+  so the 1px→2px ring change and the UA `<button>` border add 0px; the "✓ Selected" badge is
+  always rendered and toggled with `invisible` to reserve its space. A global element
+  normalize in `app.scss` (`h1–h6,p,ul,ol` margin/padding 0) removes the Quasar/UA base
+  margins that were inflating gaps — this also closes the border-reset follow-up flagged in
+  the shell PR.
+- **Perk icon = FontAwesome `circle-check`, colored `text-neutral`.** Inlined as the exact
+  Figma SVG (node `1089:985`); its Figma fill is black with **no bound colour variable**, so
+  it maps to `text-neutral` — explicitly not teal/green (avoiding the "don't invent Figma
+  details" trap). The badge "✓" is a literal U+2713 glyph, per the frame.
+- **Assumption:** the Full Name / Email placeholders aren't shown in the frame (it shows
+  sample filled values), so I matched the other fields' "Enter your …" pattern.
+- **Discrepancies (no exact token, recorded in §4):** badge type 11px → arbitrary
+  `text-[11px] leading-[14px]`; card dual drop-shadow → arbitrary two-layer `shadow-[…]`.
+
+**Review hardening (from the `/code-review` prep pass, D21):** implemented the full
+WAI-ARIA radiogroup keyboard pattern (roving tabindex + Arrow/Home/End) rather than an
+inert `role=radio`; added a `sr-only` `<h1>` so Step 1 has a top-level heading (the frame
+shows none); gave `FormField` a `focus-visible` ring (weak 1px-border focus was the only
+indicator); and memoized `fetchEvent` so the header + Step 1 share one fetch and revisiting
+Step 1 doesn't reload the spinner. **Dismissed with rationale** (not bugs): the ticket price
+stays `${{ price }}` — Figma shows `$299`, and `formatCurrency` is reserved for the Step 3/4
+totals; "Next: Session Selection" vs the stepper's "Sessions" are both verbatim from Figma;
+the global `app.scss` normalize's blast radius is deliberate.
+
+Tests: `StepAttendee.spec.js` — AC-1.1 (fields + optional shipping), AC-1.2 (single-select +
+roving-tabindex/arrow-key a11y), AC-1.3 (VIP-only workshop perk), AC-1.4 (whole-dollar prices,
+render side), AC-1.5 (no inline errors pre-submit).
+
+## docs: forbid design-narration comments in code (CLAUDE §1.7)
+
+On request, made "comments describe code, not design" a constitution rule: `CLAUDE.md` §1.7 +
+a new anti-pattern bar style/layout/token/Figma/measured-value narration from source — that
+rationale lives only in `IMPLEMENTATION_PLAN.md`. Stripped such comments from the merged
+`WizardStepper.vue` (the new Step 1 components were written comment-light from the start).
+Recorded as **D19**.
+
+**Judgment call:** I kept two terse _behavior_ comments (the badge `invisible` toggle and the
+box-shadow selection ring) — not style narration, but guards against a well-meaning
+"simplify back to `v-if` / a border" refactor that would reintroduce the selection-time
+layout shift the review explicitly asked to fix.
+
+## fix(attendee): pin the Selected badge to the card bottom-left
+
+Per reviewer request, the "✓ Selected" badge now sits in the **same bottom-left corner on
+every ticket card** (`mt-auto`) instead of flowing 12px below each card's last perk. Since
+the cards are equal-height (grid), this lands the badge at a consistent 20px-from-bottom-left
+inset on all three; height stays 288px and stable across selection. Recorded as **D22** —
+a deliberate override of the earlier Figma reading (D20), where the badge tracked each card's
+perk count.

@@ -1,2 +1,26 @@
 @import 'src/css/colors.scss';
 @import 'src/css/typography.scss';
+
+// Normalize base flow-element spacing to 0. The Figma frames drive ALL spacing through
+// layout (flex `gap` / padding), but the browser + Quasar base stylesheets add UA-style
+// margins (h2 0.83em, <p> 16px-bottom, <ul> vertical margins + a 40px list indent) that
+// would otherwise inflate every measured gap and push list items off their column. These
+// bare-element selectors (specificity 0,0,1) stay well below Quasar's own `.q-*` component
+// rules, so component styling is unaffected.
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
