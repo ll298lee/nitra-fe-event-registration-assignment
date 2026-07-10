@@ -590,3 +590,14 @@ hint, − disabled at 0 / + disabled at max (merch4), added footer, emit contrac
 cap at maxQuantity (merch3 → 2), banner exact README copy when added (AC-3.9) / absent when none
 (AC-3.10), decrement-to-0 drops the entry + hides the banner. All 110 tests green; `yarn check` clean;
 pixel parity confirmed vs frame `1149:565`.
+
+## docs(plan): confirm Step 2 stays free-select on stale conflicts (D33)
+
+Recorded a product decision from review discussion: when a workshop is selected first and a
+conflicting session is then added via back-nav, the session stays **freely selectable in Step 2
+with no warning there** — this is README §2.2 (Step 2 defers time-conflict validation to Step 4).
+The stale conflict is surfaced on the Step 3 workshop card ("Overlaps {session}", D10) and, once
+built, at Step 4 submit (AC-4.6). A non-blocking Step 2 indicator was considered and **declined**;
+gating Step 2 or auto-removing the workshop were rejected as README §2.2 / D10 violations. No code
+change — **AC-4.6 (pending validation PR) is the closing mechanism**; the current "nothing happens"
+is only because that Step 4 validation isn't built yet.
