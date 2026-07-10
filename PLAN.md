@@ -1031,3 +1031,35 @@ drifted after PRs #20 and #21 merged.
   Phase-4 items.
 - **Added the missing PR #20 and #21 rows** to the §9 review log (it had stopped at #19; a PR can't
   log its own merge, so both were absent).
+
+## feat(responsive): adapt at tablet 768 / desktop 1024
+
+First Phase-4 `feat(responsive)` change (D44). The Figma is a fixed 1440 desktop frame with no
+responsive frames, so the breakpoint behavior is a spec-gap fill — mobile-first, using only the
+`tablet` (768) / `desktop` (1024) tokens from `src/unocss/index.js`.
+
+- **What changed.** Band insets now scale (`px-4 tablet:px-8 desktop:px-12` header, `…desktop:px-30`
+  for stepper/main/footer); Step-1 ticket cards + the two-up form rows and Step-2's session grid
+  stack on mobile and become grid/side-by-side from 768; Step-3's list + Order-Summary sidebar are
+  two-column only from 1024 (stacked, summary below, on tablet/mobile); the stepper shows only the
+  current step's label below 768 (compact numbered rail), all labels from 768 up.
+- **Desktop parity.** At ≥1024 every value equals the pre-change design, so the 1440 verify-gate is
+  byte-identical — confirmed in-browser with `getComputedStyle` at 375/768/1024/1440 across all four
+  steps.
+- **Trap (worth remembering).** The label reveal first used `tablet:inline` and rendered nothing at
+  ≥768 because **Quasar ships `.hidden { display:none !important }`**; the fix is the `!` important
+  modifier `tablet:!inline` (same pattern as `IndexPage`'s `disabled:!opacity-50`). Grid/flex/padding
+  responsive utilities were unaffected (no competing Quasar `!important`).
+- **Judgment call (flagged).** With two breakpoints and an absolute 120px desktop inset, content is
+  tightest right at 1024; a max-width-centered container would smooth this but needs inner wrappers
+  for the full-bleed dividers, so it was deferred to keep the diff focused and 1440-parity provable.
+- Added SFC class-presence guards to the four step/stepper specs (AC-R-1..4); 200 tests green,
+  `yarn check` clean.
+- **Adversarial-review follow-ups (fixed in this commit).** An adversarial multi-dimension review of
+  the diff surfaced two real gaps the in-browser pass missed: **(1)** the Step-2/Step-3 segmented tab
+  bars weren't responsive — at ≤375 "Meal Packages" wrapped out of its `h-8` pill and the strip forced
+  page-level horizontal scroll; made the strip wrap to a second row on mobile (`flex-wrap max-w-full`,
+  `tablet:flex-nowrap`) with each pill single-line (`whitespace-nowrap shrink-0 px-4 tablet:px-5`), so
+  no page overflow (verified 375/360/320). **(2)** hiding non-current stepper labels with
+  `display:none` dropped them from the accessibility tree (bare-digit / unnamed buttons on mobile);
+  added `:aria-label="step.label"` to every step button. Both covered by new/updated stepper specs.

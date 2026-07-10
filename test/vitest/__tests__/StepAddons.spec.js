@@ -335,4 +335,19 @@ describe('StepAddons (Step 3 — Meal Packages)', () => {
     expect(w.findAll('.q-skeleton')).toHaveLength(0);
     expect(tabs(w)).toHaveLength(3);
   });
+
+  // AC-R-4 (Phase-4 responsive, D44) — the add-on list + order-summary sidebar stack (column,
+  // summary below) below the desktop breakpoint and become a two-column row from 1024px up; the
+  // sidebar is full-width until then. Class presence guards the VIS check.
+  it('stacks the list + summary column below desktop, two-column from 1024px up', async () => {
+    const w = await mountStep();
+
+    const row = w.find('.desktop\\:flex-row');
+    expect(row.exists()).toBe(true);
+    expect(row.classes()).toContain('flex-col');
+
+    const aside = w.find('aside');
+    expect(aside.classes()).toContain('w-full');
+    expect(aside.classes()).toContain('desktop:w-[380px]');
+  });
 });

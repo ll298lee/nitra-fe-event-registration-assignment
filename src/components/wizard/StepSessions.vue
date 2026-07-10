@@ -77,7 +77,7 @@ function onTabKeydown(e) {
     <div v-if="loading" class="flex flex-col gap-6" aria-hidden="true">
       <q-skeleton width="176px" height="40px" class="rounded-[10px]" />
       <q-skeleton type="text" width="140px" />
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 tablet:grid-cols-2">
         <CardSkeleton v-for="n in 4" :key="n" :lines="2" />
       </div>
     </div>
@@ -87,7 +87,7 @@ function onTabKeydown(e) {
         ref="tablistRef"
         role="tablist"
         aria-label="Session day"
-        class="inline-flex w-fit gap-1 rounded-[10px] bg-surface-l2 p-1"
+        class="inline-flex w-fit max-w-full flex-wrap gap-1 rounded-[10px] bg-surface-l2 p-1 tablet:flex-nowrap"
         @keydown="onTabKeydown"
       >
         <button
@@ -99,7 +99,7 @@ function onTabKeydown(e) {
           :aria-selected="activeDayIndex === i"
           :aria-controls="`${uid}-panel`"
           :tabindex="activeDayIndex === i ? 0 : -1"
-          class="h-8 cursor-pointer rounded-lg border-0 px-5 py-2 text-[13px] leading-[normal] transition-colors"
+          class="h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-0 px-4 py-2 text-[13px] leading-[normal] transition-colors tablet:px-5"
           :class="
             activeDayIndex === i
               ? 'bg-brand-emphasis-rest font-semibold text-inverse'
@@ -118,7 +118,7 @@ function onTabKeydown(e) {
         :id="`${uid}-panel`"
         role="tabpanel"
         :aria-labelledby="`${uid}-tab-${activeDayIndex}`"
-        class="grid grid-cols-2 gap-4"
+        class="grid grid-cols-1 gap-4 tablet:grid-cols-2"
       >
         <SessionCard
           v-for="s in activeDay.sessions"

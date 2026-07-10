@@ -146,20 +146,24 @@ function onTabKeydown(e) {
 
 <template>
   <div>
-    <div v-if="loading" class="flex items-start gap-8" aria-hidden="true">
+    <div
+      v-if="loading"
+      class="flex flex-col gap-8 desktop:flex-row desktop:items-start"
+      aria-hidden="true"
+    >
       <div class="flex flex-1 flex-col gap-6">
         <q-skeleton type="text" width="200px" height="28px" />
-        <q-skeleton width="320px" height="40px" class="rounded-[10px]" />
+        <q-skeleton width="320px" height="40px" class="max-w-full rounded-[10px]" />
         <div class="flex flex-col gap-4">
           <CardSkeleton v-for="n in 3" :key="n" :lines="2" />
         </div>
       </div>
-      <aside class="w-[380px] shrink-0">
+      <aside class="w-full desktop:w-[380px] desktop:shrink-0">
         <CardSkeleton :lines="6" />
       </aside>
     </div>
 
-    <div v-else class="flex items-start gap-8">
+    <div v-else class="flex flex-col gap-8 desktop:flex-row desktop:items-start">
       <div class="flex flex-1 flex-col gap-6">
         <h2 class="text-h3 text-neutral">Select Add-ons</h2>
 
@@ -167,7 +171,7 @@ function onTabKeydown(e) {
           ref="tablistRef"
           role="tablist"
           aria-label="Add-on category"
-          class="inline-flex w-fit gap-1 rounded-[10px] bg-surface-l2 p-1"
+          class="inline-flex w-fit max-w-full flex-wrap gap-1 rounded-[10px] bg-surface-l2 p-1 tablet:flex-nowrap"
           @keydown="onTabKeydown"
         >
           <button
@@ -179,7 +183,7 @@ function onTabKeydown(e) {
             :aria-selected="activeIndex === i"
             :aria-controls="`${uid}-panel`"
             :tabindex="activeIndex === i ? 0 : -1"
-            class="h-8 cursor-pointer rounded-lg border-0 px-5 py-2 text-[13px] leading-[normal] transition-colors"
+            class="h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-lg border-0 px-4 py-2 text-[13px] leading-[normal] transition-colors tablet:px-5"
             :class="
               activeIndex === i
                 ? 'bg-brand-emphasis-rest font-semibold text-inverse'
@@ -235,7 +239,7 @@ function onTabKeydown(e) {
         </div>
       </div>
 
-      <aside class="w-[380px] shrink-0">
+      <aside class="w-full desktop:w-[380px] desktop:shrink-0">
         <OrderSummaryPanel :ticket-types="ticketTypes" :addons="addons" />
       </aside>
     </div>

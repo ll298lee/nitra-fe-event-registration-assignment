@@ -71,7 +71,7 @@ function onKeydown(e) {
     <section class="flex flex-col gap-4">
       <h2 class="text-subtitle1 text-neutral">Select Ticket Type</h2>
 
-      <div v-if="loadingEvent" class="grid grid-cols-3 gap-4">
+      <div v-if="loadingEvent" class="grid grid-cols-1 gap-4 tablet:grid-cols-3">
         <CardSkeleton v-for="n in 3" :key="n" :lines="3" />
       </div>
 
@@ -80,7 +80,7 @@ function onKeydown(e) {
         ref="groupRef"
         role="radiogroup"
         aria-label="Ticket type"
-        class="grid grid-cols-3 gap-4"
+        class="grid grid-cols-1 gap-4 tablet:grid-cols-3"
         @keydown="onKeydown"
       >
         <TicketCard
@@ -100,7 +100,7 @@ function onKeydown(e) {
       <h2 class="text-h3 text-neutral">Attendee Information</h2>
 
       <div class="flex flex-col gap-5">
-        <div class="flex gap-6">
+        <div class="flex flex-col gap-5 tablet:flex-row tablet:gap-6">
           <FormField
             v-model="attendee.fullName"
             class="flex-1"
@@ -120,7 +120,7 @@ function onKeydown(e) {
           />
         </div>
 
-        <div class="flex gap-6">
+        <div class="flex flex-col gap-5 tablet:flex-row tablet:gap-6">
           <FormField
             v-model="attendee.phone"
             class="flex-1"

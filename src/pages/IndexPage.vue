@@ -143,7 +143,7 @@ function onBackToHome() {
 <template>
   <div class="flex min-h-screen flex-col bg-surface-l0 text-neutral">
     <header
-      class="flex items-center gap-3 border-x-0 border-b border-t-0 border-solid divider-default px-12 py-4"
+      class="flex items-center gap-3 border-x-0 border-b border-t-0 border-solid divider-default px-4 py-4 tablet:px-8 desktop:px-12"
     >
       <div
         class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-emphasis-rest text-inverse"
@@ -177,7 +177,9 @@ function onBackToHome() {
     />
 
     <template v-else>
-      <div class="border-x-0 border-b border-t-0 border-solid divider-default px-30 py-6">
+      <div
+        class="border-x-0 border-b border-t-0 border-solid divider-default px-4 py-6 tablet:px-8 desktop:px-30"
+      >
         <WizardStepper
           :steps="STEPS"
           :current="currentStep"
@@ -186,7 +188,7 @@ function onBackToHome() {
         />
       </div>
 
-      <main class="flex flex-1 flex-col gap-8 px-30 py-10">
+      <main class="flex flex-1 flex-col gap-8 px-4 py-10 tablet:px-8 desktop:px-30">
         <!-- Each step renders its own visible title; this h1 stays screen-reader-only as the
              page's landmark heading (the stepper label). -->
         <h1 class="sr-only">{{ currentStepMeta.label }}</h1>
@@ -199,7 +201,7 @@ function onBackToHome() {
       </main>
 
       <footer
-        class="flex items-center border-x-0 border-b-0 border-t border-solid divider-default px-30 py-4"
+        class="flex items-center border-x-0 border-b-0 border-t border-solid divider-default px-4 py-4 tablet:px-8 desktop:px-30"
         :class="isFirstStep ? 'justify-end' : 'justify-between'"
       >
         <button
