@@ -353,4 +353,15 @@ describe('StepReview (Step 4 — submit-time error display, D36)', () => {
     });
     expect(w.text()).not.toContain('(required)');
   });
+
+  // D43(b) — skeletons stand in while the review data loads, then clear for the summary.
+  it('shows skeletons while the review loads, then the summary', async () => {
+    const w = mount(Harness); // do NOT flush — assert the loading branch first
+    expect(w.findAll('.q-skeleton').length).toBeGreaterThan(0);
+    expect(w.text()).not.toContain('Review Your Registration');
+
+    await flushPromises();
+    expect(w.findAll('.q-skeleton')).toHaveLength(0);
+    expect(w.text()).toContain('Review Your Registration');
+  });
 });

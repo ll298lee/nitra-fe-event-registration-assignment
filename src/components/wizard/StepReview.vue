@@ -7,6 +7,7 @@ import { formatDateTime } from '../../utils/datetime.js';
 import ReviewSection from './ReviewSection.vue';
 import PricingSummaryCard from './PricingSummaryCard.vue';
 import ErrorBanner from './ErrorBanner.vue';
+import CardSkeleton from './CardSkeleton.vue';
 
 // Step 4 — Review & Submit (D35/D36). A single-column, read-only summary of every Step 1–3
 // selection plus the itemized pricing; each section's Edit control jumps back to its step, with
@@ -131,8 +132,12 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
 
 <template>
   <div>
-    <div v-if="loading" class="flex justify-center py-10">
-      <q-spinner size="32px" class="text-brand-emphasis" />
+    <div v-if="loading" class="flex flex-col gap-6" aria-hidden="true">
+      <q-skeleton type="text" width="240px" height="28px" />
+      <CardSkeleton :lines="6" />
+      <CardSkeleton :lines="2" />
+      <CardSkeleton :lines="2" />
+      <CardSkeleton :lines="4" />
     </div>
 
     <div v-else class="flex flex-col gap-6">

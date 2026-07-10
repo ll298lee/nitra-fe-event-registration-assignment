@@ -976,3 +976,18 @@ impossible to miss and smooths its appearance.
   it scrolls into view; the section card goes red with `— (required)` rows and the stepper shows
   the red "!" step. 195 tests green (the `IndexPage` submit tests exercise `revealErrors` under the
   matchMedia guard).
+
+## feat(ux): Step-4 loading skeleton + disabled-state transitions
+
+Sixth UX-polish commit (D43f/D43b) — completes the "loading and disabled states" theme.
+
+- **Step-4 skeleton.** Commit 2 gave Steps 1–3 skeletons but left Step 4 (Review) on a bare
+  `q-spinner`. Replaced it with stacked skeletons (a title bar + four `CardSkeleton`s shaped like
+  the Attendee/Sessions/Add-ons/Pricing cards, with 6/2/2/4 rows), so all four steps now share the
+  same content-shaped loading treatment. Added a matching loading test to `StepReview.spec` (mount
+  without flushing → skeletons present + no title; after flush → skeletons gone + title). 196 green.
+- **Disabled-state transitions.** The primary/submit button now transitions `opacity` (not just
+  colours), so its disable ↔ re-enable on a failed/fixed submit fades smoothly instead of snapping;
+  the `MerchCard` −/+ quantity glyphs gain `transition-colors` so their dim-to-`text-neutral-disabled`
+  at min/max eases rather than jumping. (Both already had `cursor-not-allowed` on the disabled
+  control.)

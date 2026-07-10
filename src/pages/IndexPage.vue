@@ -212,7 +212,7 @@ function onBackToHome() {
         </button>
         <button
           type="button"
-          class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-colors hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active disabled:cursor-not-allowed disabled:!opacity-50"
+          class="flex cursor-pointer items-center justify-center border-0 bg-accent-emphasis-rest text-inverse transition-[color,background-color,opacity] hover:bg-accent-emphasis-hover active:bg-accent-emphasis-active disabled:cursor-not-allowed disabled:!opacity-50"
           :class="primaryClass"
           :disabled="submitDisabled"
           @click="onPrimary"
