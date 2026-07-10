@@ -64,6 +64,18 @@ export function formatTimeRange(start, end) {
 }
 
 /**
+ * Wall-clock date + time range `MMM D, h:mm AM/PM – h:mm AM/PM`
+ * (e.g. `Nov 16, 2:00 PM – 5:00 PM`), used for the Step 3 workshop cards where the
+ * date is shown alongside the time (unlike Step 2, which shows time only).
+ * @param {Date} start
+ * @param {Date} end
+ * @returns {string}
+ */
+export function formatDateTimeRange(start, end) {
+  return `${formatDayLabel(start)}, ${formatTimeRange(start, end)}`;
+}
+
+/**
  * Wall-clock day key `YYYY-MM-DD`, used to group sessions by day.
  * Reads UTC fields so the grouping never shifts across the local-midnight boundary.
  * @param {Date} date

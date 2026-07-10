@@ -507,3 +507,49 @@ Tests: `useOrderSummary.test.js` — AC-P-2 (VIP+ws1 → $14.90 / net $134.10 / 
 (workshops-only), AC-P-5 (General/Student → $0), AC-P-6 (killer ticket-switch $733.10→$448.00),
 AC-P-7 (full cart VIP $848.10 / General $563.00), AC-4.2 (itemized lines + order), AC-3.11 (live
 recompute), merch quantity/size + zero-qty/unknown-id edges, and the provide/inject wrapper.
+
+## feat(addons): Step 3 scaffold, workshop cards & order summary
+
+Step 3 UI part 1 (frames `1073:899` Workshops / `1149:565` Merchandise), built to measured values
+and verified in-browser at 1440px. `StepAddons` (title, category tabs, two-column layout — add-ons
+list + `OrderSummaryPanel` sidebar, off the async facade), `WorkshopCard`
+(available/selected/full/conflict), `OrderSummaryPanel` (live total + teal VIP discount line),
+wired into `IndexPage`. `formatDateTimeRange` ("Nov 16, 2:00 PM – 5:00 PM") added to `datetime.js`.
+Merch + Meals tabs are placeholders (later PRs). Recorded as **D27–D31**.
+
+Critical decisions / judgment calls:
+
+- **Category grouping = segmented tabs (D27),** reusing the Step 2 day-tab WAI-ARIA pattern — that's
+  how the frame renders "group by category", and it keeps the running total always visible beside a
+  two-column layout.
+- **Workshop full state diverges from Step 2 (D28).** The frame draws the sold-out `ws2` as a plain
+  **white** card whose only signal is a muted "Sold Out" label — no red/grey/disabled greying (unlike
+  `SessionCard`, D24). Capacity is plain "{n} spots remaining" with no bar. Followed the frame.
+- **Two spec-gap fills flagged (D31):** Figma has **no Meal-Packages card** and **no
+  workshop-conflict state**. This PR fills the conflict state — a conflicting workshop is
+  non-selectable with a `text-warning` line naming the session; a **stale** conflict on an
+  already-selected workshop is **kept** (D10) and still deselectable. Meals land in a later PR.
+- **Discount display resolved (D29):** a separate teal "Workshop discount (VIP 10%) / -$14.90" line
+  (frame `1073:964`), not a struck-through price. The mock's inconsistent per-row font sizes
+  (12/13/11px) are normalized to `text-sm`.
+- **Discrepancy (verified in-browser):** workshop price + discount teal — frame is teal[700] #264D4F,
+  `text-brand-emphasis` renders teal[800] #1E3C3E, the nearest _text_ token (same 1-shade
+  approximation recorded for Step 2).
+
+**Review hardening (from the `/code-review` prep pass — a 9-angle recall workflow):** fixed
+`blocked = !selected && (full || conflicting)` so a full/conflicting workshop that is _already_
+selected stays deselectable (never locked, D10); a full workshop that also conflicts now shows only
+"Sold Out" (the conflict line is suppressed when full); the order-summary sidebar is gated behind the
+loading state so it no longer flashes "Nothing selected yet." / $0.00 during the fetch; the empty
+Meals/Merch tabpanel gets `tabindex=0` (a11y); order-summary labels wrap while the price is pinned
+(long names, esp. once reused in Step 4); conflicts are memoized into a computed map; and
+`toggleWorkshop` re-asserts the full/conflict block at the store mutation, not only in the card.
+**Deferred (flagged):** extracting a shared `SegmentedTabs`/`SelectableCard`/shadow token (would
+touch the merged Step 2 — its own refactor PR); real fetch-error handling (consistent with D21).
+
+Tests: `StepAddons.spec.js` — AC-3.1 (tabs + order + a11y), AC-3.2 (`ws2` Sold Out + not selectable),
+AC-3.3/D9 (conflict names the session), AC-3.4/D6 (`s10` touch ≠ conflict), D10 (stale conflict kept
+
+- full-but-selected deselectable), full-and-conflict → only "Sold Out", AC-3.11 (summary updates
+  live). `OrderSummaryPanel.spec.js` — ticket/workshop/merch lines, VIP discount line, non-VIP omits
+  it, empty state. `datetime.test.js` — `formatDateTimeRange`.
