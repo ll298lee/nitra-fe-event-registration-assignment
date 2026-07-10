@@ -158,13 +158,14 @@ describe('StepAddons (Step 3 — Add-ons: scaffold + Workshops + Order Summary)'
     expect(ws2.text()).not.toContain('overlaps');
   });
 
-  // AC-3.1 (interaction) — switching tabs swaps the category panel (Meals still pending).
+  // AC-3.1 (interaction) — switching tabs swaps the category panel.
   it('switches to the Meal Packages / Merchandise tabs', async () => {
     const w = await mountStep();
 
     await tabs(w)[1].trigger('click');
-    expect(w.find('[role="tabpanel"]').text()).toContain('Meal Packages selection is coming');
-    expect(workshopCards(w)).toHaveLength(0);
+    expect(cardByName(w, 'Standard Lunch (Both Days)')).toBeTruthy();
+    expect(cardByName(w, 'Hands-on Vue.js Testing')).toBeFalsy(); // workshops gone
+    expect(merchCards(w)).toHaveLength(0);
 
     await tabs(w)[2].trigger('click');
     expect(merchCards(w)).toHaveLength(4);
@@ -275,5 +276,52 @@ describe('StepAddons (Step 3 — Merchandise + shipping banner)', () => {
     await dec(tshirt);
     expect(store.merchSelections.merch1).toBeUndefined();
     expect(w.find('[role="note"]').exists()).toBe(false);
+  });
+});
+
+describe('StepAddons (Step 3 — Meal Packages)', () => {
+  // On the Meals tab the only checkbox cards are the meal cards (no time/capacity controls).
+  async function gotoMeals() {
+    const w = await mountStep();
+    await tabs(w)[1].trigger('click');
+    return w;
+  }
+
+  // AC-3.12 — the Meal Packages tab lists both meal packages, in mock order.
+  it('lists both meal packages in order with price and description', async () => {
+    const w = await gotoMeals();
+    const cards = workshopCards(w);
+    expect(cards).toHaveLength(2);
+    expect(cards[0].text()).toContain('Standard Lunch (Both Days)');
+    expect(cards[1].text()).toContain('Premium Dinner — Day 1 Networking Event');
+
+    const lunch = cardByName(w, 'Standard Lunch (Both Days)');
+    expect(lunch.text()).toContain('$45.00');
+    expect(lunch.text()).toContain('Buffet lunch with vegetarian and vegan options.');
+  });
+
+  // AC-3.13 — selecting a meal writes to the store, reflects aria-checked, and updates the total.
+  it('toggles a meal on and off, updating the store and running total', async () => {
+    const w = await gotoMeals();
+    const lunch = cardByName(w, 'Standard Lunch (Both Days)');
+    const summary = w.find('[aria-label="Order summary"]');
+
+    await lunch.trigger('click');
+    expect(store.selectedMealIds.value).toContain('meal1');
+    expect(lunch.attributes('aria-checked')).toBe('true');
+    expect(summary.text()).toContain('Standard Lunch (Both Days) × 1');
+    expect(summary.text()).toContain('$45.00');
+
+    await lunch.trigger('click');
+    expect(store.selectedMealIds.value).not.toContain('meal1');
+    expect(lunch.attributes('aria-checked')).toBe('false');
+  });
+
+  // AC-3.13 — meals are independent (multi-select): both packages can be added at once.
+  it('allows both meal packages to be selected together', async () => {
+    const w = await gotoMeals();
+    await cardByName(w, 'Standard Lunch (Both Days)').trigger('click');
+    await cardByName(w, 'Premium Dinner — Day 1 Networking Event').trigger('click');
+    expect(store.selectedMealIds.value).toEqual(['meal1', 'meal2']);
   });
 });

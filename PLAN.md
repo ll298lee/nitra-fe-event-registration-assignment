@@ -803,3 +803,32 @@ heading/number + personalized thank-you, emits `home`. `IndexPage.spec.js` — a
 success screen with the confirmation # + dynamic name/email; a double-submit is guarded while in
 flight; "Back to Home" resets to a pristine Step 1. `facade.test.js` already covered the
 confirmation-number format + echo.
+
+## feat(addons): step 3 meal package selection
+
+The last Step-3 add-on category. A new `MealCard` fills the previously-placeholder Meal
+Packages tab in `StepAddons`; selecting a meal toggles it into `selectedMealIds`, which the
+existing `useOrderSummary` engine and the Step-4 review already priced and listed — so this
+change is UI-only.
+
+**Figma provides no visual spec for meal packages** — meals appear only as a tab _label_,
+never as a card. Per the ask, I designed the card from the **common Step-3 card pattern
+(Workshops + Merchandise)**: a meal is a selectable toggle add-on with no quantity, capacity,
+or time, so `MealCard` reuses the `WorkshopCard` treatment wholesale **minus** the time/
+capacity/conflict rows — header (name + price), description, and the shift-free selection
+ring. Recorded as **D41** (confirms the earlier D31a plan).
+
+Judgment calls (flagged for review):
+
+- **Teal price + cents, inherited by reusing `WorkshopCard` verbatim** — the two priced-
+  _toggle_ add-ons (workshop, meal) share a treatment; merch (a quantity add-on) keeps
+  neutral/no-cents. Switching meals to match merch is a one-line change if preferred.
+- **Plain multi-select, no conflict/full guard** (meals have no capacity or time slot, so
+  both packages are independently selectable and the workshop guard would be dead code); no
+  "✓ Added" footer, following `WorkshopCard` not `MerchCard`. Also removed the meal-
+  placeholder tabpanel `tabindex=0` hack now that every panel holds focusable controls.
+
+192 tests green, `yarn check` clean; verified in-browser (`agent-browser` `getComputedStyle`
+@1440px) byte-identical to `WorkshopCard`, selection ring renders (no UnoCSS static-scan issue).
+Tests: `MealCard.spec.js` (new) + `StepAddons.spec.js` meal block (both cards in order AC-3.12;
+toggle on/off + live total + `aria-checked`, both selectable together AC-3.13).
