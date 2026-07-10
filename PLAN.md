@@ -991,3 +991,26 @@ Sixth UX-polish commit (D43f/D43b) — completes the "loading and disabled state
   the `MerchCard` −/+ quantity glyphs gain `transition-colors` so their dim-to-`text-neutral-disabled`
   at min/max eases rather than jumping. (Both already had `cursor-not-allowed` on the disabled
   control.)
+
+## fix(ux): address code-review findings (banner-during-load, memoize fetches, transitions)
+
+The `/code-review` prep pass on the branch surfaced three actionable findings (14 survived
+verification; the rest are flagged in the PR as pre-existing/unreachable or deliberate tradeoffs).
+
+- **[CONFIRMED bug] Error banner during Step-4's load window.** `revealErrors()` targets
+  `[role="alert"]`, but the banner used to live inside `StepReview`'s data-loading `v-else`, so a
+  submit clicked while the review was still showing its skeleton found no banner to scroll/focus/
+  announce. Moved the `<Transition><ErrorBanner>` **outside** the loading gate — it is validation
+  state, not reviewed data, so it should not be hidden by the data skeleton.
+- **[CONFIRMED altitude] Skeleton flashed on every step revisit.** `fetchSessions`/`fetchAddons`
+  were not memoized (only `fetchEvent` was, D21), so every step remount re-incurred the 250 ms
+  latency — and the new skeletons + step transition made that flash prominent on Back / "Edit →
+  Step N". Memoized both (same in-flight-promise cache as `fetchEvent`): the first load pays the
+  latency once; every revisit resolves from cache before paint, so no skeleton re-flashes.
+  Verified in-browser: revisiting Step 2 shows 0 skeletons and the cards immediately.
+- **[CONFIRMED cleanup] Split transition CSS.** The `step` transition lived in an `IndexPage`
+  `<style>` while the near-identical `fade` was in `app.scss`. Moved `step` into `app.scss` next to
+  `fade` and collapsed the two `prefers-reduced-motion` guards into one shared block; removed the
+  `IndexPage` `<style>`.
+
+196 tests green; no console errors across a full step walk.

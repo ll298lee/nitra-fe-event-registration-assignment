@@ -224,32 +224,3 @@ function onBackToHome() {
     </template>
   </div>
 </template>
-
-<style>
-/* Non-scoped: Vue applies these classes to the child step's root element, which carries the
-   child component's scope attribute — scoped rules here would not match it. Names are unique. */
-.step-enter-active,
-.step-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-.step-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-.step-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .step-enter-active,
-  .step-leave-active {
-    transition: none;
-  }
-  .step-enter-from,
-  .step-leave-to {
-    transform: none;
-  }
-}
-</style>

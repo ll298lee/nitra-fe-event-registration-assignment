@@ -34,20 +34,32 @@ export function fetchEvent() {
   return eventPromise;
 }
 
+// Sessions and add-ons are immutable reference data too, and their steps (2/3) plus the Step-4
+// review all remount on every visit. Cache the in-flight promise (as fetchEvent does) so the
+// first visit pays the latency once and every revisit — Back, "Edit → Step N" from the review —
+// resolves from cache before paint, so the loading skeleton never re-flashes on navigation.
+let sessionsPromise = null;
+
 /**
  * @returns {Promise<import('./normalize.js').Session[]>}
  */
-export async function fetchSessions() {
-  await delay(SIMULATED_LATENCY_MS);
-  return normalizeSessions(sessions);
+export function fetchSessions() {
+  if (!sessionsPromise) {
+    sessionsPromise = delay(SIMULATED_LATENCY_MS).then(() => normalizeSessions(sessions));
+  }
+  return sessionsPromise;
 }
+
+let addonsPromise = null;
 
 /**
  * @returns {Promise<import('./normalize.js').Addon[]>}
  */
-export async function fetchAddons() {
-  await delay(SIMULATED_LATENCY_MS);
-  return normalizeAddons(addons);
+export function fetchAddons() {
+  if (!addonsPromise) {
+    addonsPromise = delay(SIMULATED_LATENCY_MS).then(() => normalizeAddons(addons));
+  }
+  return addonsPromise;
 }
 
 /**

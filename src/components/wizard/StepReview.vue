@@ -131,7 +131,14 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-6">
+    <!-- The error banner is validation state, not reviewed data, so it renders outside the
+         data-loading gate — otherwise a submit during the load window would find no banner to
+         scroll/focus/announce (revealErrors targets [role="alert"]). -->
+    <Transition name="fade">
+      <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
+    </Transition>
+
     <div v-if="loading" class="flex flex-col gap-6" aria-hidden="true">
       <q-skeleton type="text" width="240px" height="28px" />
       <CardSkeleton :lines="6" />
@@ -141,10 +148,6 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <Transition name="fade">
-        <ErrorBanner v-if="errorSummary.length" :items="errorSummary" />
-      </Transition>
-
       <h2 class="text-h3 text-neutral">Review Your Registration</h2>
 
       <ReviewSection

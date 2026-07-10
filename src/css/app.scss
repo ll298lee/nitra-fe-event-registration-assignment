@@ -34,9 +34,10 @@ ol {
   list-style: none;
 }
 
-// Reusable fade transition for Vue <Transition name="fade"> (e.g. the submit-error banner).
-// Global on purpose: <Transition> applies these classes to a child component's root element,
-// which carries that child's scoped-style attribute, so a component-scoped rule would not match.
+// Reusable Vue <Transition> classes. Global on purpose: <Transition> applies these to a child
+// component's root element, which carries that child's scoped-style attribute, so a
+// component-scoped rule would not match. "fade" = opacity only (e.g. the submit-error banner);
+// "step" = opacity + a slight vertical shift for the wizard step swap.
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -45,9 +46,29 @@ ol {
 .fade-leave-to {
   opacity: 0;
 }
+.step-enter-active,
+.step-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.step-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.step-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
 @media (prefers-reduced-motion: reduce) {
   .fade-enter-active,
-  .fade-leave-active {
+  .fade-leave-active,
+  .step-enter-active,
+  .step-leave-active {
     transition: none;
+  }
+  .step-enter-from,
+  .step-leave-to {
+    transform: none;
   }
 }
