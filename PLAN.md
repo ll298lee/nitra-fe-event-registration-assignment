@@ -443,3 +443,41 @@ the cards are equal-height (grid), this lands the badge at a consistent 20px-fro
 inset on all three; height stays 288px and stable across selection. Recorded as **D22** —
 a deliberate override of the earlier Figma reading (D20), where the badge tracked each card's
 perk count.
+
+## feat(sessions): Step 2 session selection — day tabs + capacity states
+
+Step 2 (frame `1072:912`), built to measured values and verified in-browser: `TrackBadge`
+(track → semantic palette), `SessionCard` (checkbox card with track badge, wall-clock time,
+capacity fill-tone bar, remaining-spots/"Sold Out" label, and available/selected/full states),
+`StepSessions` (day-tab switcher + live selection counter + card grid, off the async facade),
+wired into `IndexPage` for Step 2. `formatDayLabel` ("Nov 15") added to `datetime.js`.
+
+Critical decisions / judgment calls:
+
+- **The frame is a state-catalog, so README drives behavior (D24).** Its cards show
+  inconsistent states (the _full_ `s2` drawn selectable + "Sold Out"; the _not-full_ `s5`
+  drawn greyed/disabled — an apparent conflict artifact). Per README §1.2 I follow the spec:
+  **full** sessions (`s2`, `s9`) are greyed + not selectable + "Sold Out"; there is **no
+  conflict-gating at Step 2** (free multi-select; conflicts defer to Step 4, D6/AC-2.6). The
+  full-state visual synthesizes the frame's two treatments (its disabled card + its "Sold Out"
+  bar).
+- **Group-by-date is a segmented day-tab control (D23),** not stacked day sections — that's
+  how the frame renders it. Built as the WAI-ARIA tabs pattern (roving tabindex + arrows), so
+  it matches Step 1's a11y bar. Days derive from the wall-clock `dayGroupKey` (D4).
+- **Capacity fill-tone bands (D25).** README asks only for "remaining spots"; the frame
+  color-codes the bar by fill %, so I fit four bands (teal/warning/accent/danger) that match
+  all six day-1 cards, applied to both days. Presentation-only → lives in `SessionCard`.
+- **Copy call, flagged:** the full label uses the frame's **"Sold Out"** rather than README's
+  descriptive "full".
+- **Open question:** should the greyed `s5` treatment mean Step 2 _does_ preview time
+  conflicts (contradicting README's "defer to Step 4")? I read it as a catalog artifact and
+  kept README's free-select — worth a reviewer gut-check.
+- **Discrepancies (no exact token, §4):** 11px/14 type, two-layer drop shadow, `rounded-[3px]`
+  /`[2px]`/`[10px]`; `main`-badge text and the low/high spots-label colors map to the nearest
+  semantic token (frame uses gray[700]/teal[700]/orange[700], which have no exact _text_ token);
+  the frame's `bg/brand/muted/rest` #EEF6F7 matches **our** `bg-brand-subtle-rest` by hex.
+
+Tests: `StepSessions.spec.js` — AC-2.1 (day tabs + grouping + roving-tabindex/arrow a11y),
+AC-2.2 (card content + live counter), AC-2.3/Cap-4 (only `s2`/`s9` full + not selectable),
+AC-2.6 (co-select conflicting `s4`+`s5`), AC-2.7 (no ticket gating), plus toggle/multi-select.
+`datetime.test.js` — `formatDayLabel` wall-clock ("Nov 15"/"Nov 16", no local shift).

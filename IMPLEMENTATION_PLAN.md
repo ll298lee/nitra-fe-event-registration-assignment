@@ -88,6 +88,10 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
 
 | **D22** | **The "✓ Selected" badge is pinned to the card's bottom-left corner (`mt-auto`), the same spot on all three cards** — overriding the earlier Figma reading (D20) where it flowed 12px below the last perk. | User request: the badge should sit in one consistent position across cards, not track each card's perk count. Because the grid makes all cards equal height, `mt-auto` drops the (always-rendered, `invisible`-toggled) badge to the same 20px-from-bottom-left corner on every card; height stays 288px and stable across selection. |
 
+| **D23** | **Step 2 groups sessions by day via a segmented day-tab control** (`Nov 15` / `Nov 16`) that swaps the visible day, **not** stacked day-heading sections. Implemented as the WAI-ARIA **tabs** pattern (roving tabindex + Arrow/Home/End, `role=tablist/tab/tabpanel`). | The Figma Step 2 frame `1072:912` renders "group by date" (README §Step 2.1) as a segmented control, not stacked sections — this is the visual truth (§1.3) and still satisfies README's group-by-day requirement (both days reachable, organized by wall-clock date via `dayGroupKey`/`formatDayLabel`, D4). |
+| **D24** | **The Figma Step 2 frame is a state-catalog; behavior is reconciled to README.** The frame shows mutually-inconsistent per-card states (the actually-full `s2` is drawn selected + "Sold Out"; the not-full `s5` is drawn greyed/disabled — an apparent time-conflict artifact). README wins on behavior (§1.2): **(a)** full sessions (`registered >= capacity` → `s2`, `s9`) get the frame's greyed/disabled visual (`bg-surface-l2`, dimmed text, no checkbox, not selectable) **and** a red "Sold Out" capacity bar — synthesizing the frame's two treatments; **(b)** **no conflict-gating at Step 2** (the greyed `s5` is deliberately not reproduced) — conflicts stay free-select and defer to Step 4 (README §Step 2.2, D6, AC-2.6); selected-vs-full are independent. **Copy judgment call:** the full-state label uses the frame's word **"Sold Out"** (visual truth) rather than README's descriptive "full" — flagged in the PR. | README §1.2 is the immutable functional spec and forbids silent divergence; the frame's per-card states can't all be literal (a full session shown selectable, a non-full one disabled), so it is read as a state showcase and behavior is driven by README while the _visual language_ of each state is taken from the frame. |
+| **D25** | **Capacity fill-level tone bands.** The bar + spots-label color are keyed to how full a session is: `full` (≥100%) danger/"Sold Out", `high` (≥75%) accent, `medium` (≥50%) warning, `low` (<50%) brand. | The frame color-codes the capacity bar by fill level but README specifies only "remaining spots" (no thresholds) — a recorded spec-gap fill. The four thresholds fit **all six** day-1 cards observed in the frame (s6 41%→teal, s5 58%→yellow, s3 78% / s4 81% / s1 97%→orange, s2 100%→red); day-2 sessions use the same rule. Presentation-only, so it lives in `SessionCard` (not `logic/`), verified visually. |
+
 **New dependency introduced:** `vue-i18n` (per D14) — the only planned addition; rationale above.
 
 ---
@@ -178,6 +182,45 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   - **Full Name / Email placeholders** ("Enter your full name" / "…email address") are not shown in
     the frame (it shows sample filled values) — chosen to match the other fields' "Enter your …"
     pattern (judgment call).
+- **Step 2 — Session Selection (frame `1072:912`, width 1440) — measured → token (Dev Mode MCP,
+  geometry from node metadata):** content is a 1200px column (shell `px-30`); `gap-6` (24px) between
+  title → day tabs → counter → grid; title at content-y 40 (= shell `py-10`). **Title** "Select
+  Sessions" `text-h3` (24/28/630), owned by `StepSessions` (shell `h1` stays sr-only, D21-style).
+  **Day tabs (D23):** container `inline-flex gap-1 rounded-[10px] bg-surface-l2 p-1`; tab
+  `h-8 rounded-lg px-5 py-2 text-[13px] leading-[normal]`; active `bg-brand-emphasis-rest` (#264D4F)
+  - `text-inverse` + semibold, inactive transparent + `text-neutral-muted` + medium. **Counter**
+    "{n} session(s) selected" `text-sm font-medium text-neutral-muted`. **Grid** `grid-cols-2 gap-4`;
+    card **592×162** (`min-h-[162px]`), `p-4`, `rounded-md`, uniform `gap-2` (8px) between its six
+    children (top row → title → speaker → time → capacity bar → spots) — content fills 162 exactly.
+    Card edge = **inset box-shadow ring** (D20 pattern) 1px `border-neutral-muted` / selected 2px
+    `border-brand-emphasis`, + the same two-layer drop shadow as the Step 1 cards; selected bg
+    `bg-brand-subtle-rest` (#EEF6F7). **Checkbox** 16×16 `rounded-[2px]`, unchecked ring 1px
+    `border-neutral-emphasis` (#5C6970) on `bg-surface-l0`, checked `bg-brand-emphasis-rest` + the
+    inlined Figma check SVG (viewBox `0 0 10 7`) in `text-inverse`. Text: title `text-subtitle1`
+    (16/20/610) `text-neutral`; speaker `text-sm font-regular text-neutral-muted`; time
+    `text-[11px] leading-[14px] font-regular text-neutral-quiet` (wall-clock, D4). **Track badges**
+    `rounded-full px-[5px] py-[3px] text-[11px] leading-[14px] font-medium uppercase`: `main`
+    `bg-neutral-subtle-rest` / `text-neutral-muted`, `frontend` & `devops` `bg-accent-muted-rest` /
+    `text-accent-emphasis`, `backend` `bg-info-muted-rest` / `text-info-emphasis`. **Capacity bar**
+    `h-[6px] rounded-[3px] bg-surface-l2` track + fill (width = `registered / capacity`), toned per
+    D25: low `bg-brand-emphasis-rest`, medium `bg-warning-bold-rest`, high `bg-accent-bold-rest`, full
+    `bg-danger-emphasis-rest`; spots label toned `text-brand-emphasis` / `text-warning` /
+    `text-accent-emphasis` / `text-danger-emphasis`. **Full/disabled** (`s2`, `s9`, D24): `bg-surface-l2`,
+    title/speaker/time → `text-neutral-disabled`, no checkbox, native `:disabled` (badge + bar keep
+    their color).
+  * **Discrepancies (no exact token — recorded, not silently rounded):** (1) **11px/14 type** (time,
+    spots, badge) → arbitrary `text-[11px] leading-[14px]` (nearest token `text-sm` is 12/16). (2)
+    **card drop shadow** (two-layer rgba) → arbitrary `shadow-[…]`, no shadow token — as with the
+    Step 1 cards. (3) radii **3px / 2px / 10px** → `rounded-[3px]` / `rounded-[2px]` / `rounded-[10px]`
+    (scale has no 2/3/10; tab uses `rounded-lg` = 8, exact). (4) **track `main` text** frame = gray[700]
+    #5C6970 → **`text-neutral-muted`** (rgba(0,0,0,0.6)), nearest semantic (no gray[700] _text_ token) —
+    recorded 1-shade approximation. (5) **high-fill spots label** frame = orange[700] #A13B02 →
+    **`text-accent-emphasis`** (orange[600] #C94A03); **low-fill label** frame = teal[700] #264D4F →
+    **`text-brand-emphasis`** (teal[800] #1E3C3E) — nearest semantic text tokens. (6) **Figma
+    variable-name vs. our-token mismatch:** the frame's `bg/brand/muted/rest` = #EEF6F7 maps by
+    **measured hex** to **our** `bg-brand-subtle-rest` (our `bg-brand-muted-rest` is #CBE5E6) — matched
+    by value, not by the Figma variable's label. (7) **fill-tone thresholds** (D25) are an inferred
+    band mapping, not a discrete Figma token.
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
@@ -478,7 +521,8 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 
 - [x] `feat(attendee)` form fields, no inline validation (AC-1.1, AC-1.5); shipping optional here.
 - [x] `feat(attendee)` ticket cards, prices/perks from data (AC-1.2–1.4).
-- [ ] `feat(sessions)` grouped-by-day, capacity states, remaining spots, track badges (AC-2.*, D12).
+- [x] `feat(sessions)` grouped-by-day (day tabs, D23), capacity states + "Sold Out" (D24), remaining
+      spots + fill-tone bar (D25), track badges (AC-2.\*, D12).
 - [ ] `feat(addons)` grouped by category in order Workshops/Meals/Merch (AC-3.1).
 - [ ] `feat(addons)` disable workshops conflicting with selected sessions (AC-3.3–3.5, D9).
 - [ ] `feat(addons)` merch size + quantity, top-level max (AC-3.6–3.8, D16).
@@ -510,15 +554,15 @@ Each task names the spec rule / decision it satisfies. Checked as completed with
 Resolve each from the named Figma frame during that step's **Specify** phase; record the resolution
 here. None is silently hardcoded.
 
-| Item                                                                                  | Blocked on                                            | Note                                                                        |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------- |
-| Track badge styles (main/frontend/backend/devops)                                     | Step 2 frame `1072:912`                               | Map each to a semantic palette; no track token exists.                      |
-| Discount display shape (separate `−$14.90` line vs struck-through per-workshop price) | Step 3 `1149:565` / Step 4 `1074:897`                 | Math is identical (AC-P-2); only the render assertion depends on the shape. |
-| Merch qty + size interaction (one picker + size vs per-size rows summing to max)      | Step 3 `1149:565`                                     | Total-max semantics fixed (D16); interaction shape from Figma.              |
-| `merch4` max-1 control (qty stepper stuck at 1 vs add/remove toggle)                  | Step 3 `1149:565`                                     | AC-3.7.                                                                     |
-| Remaining-spots label ("13 spots left" vs "13/500")                                   | Step 2 `1072:912`                                     | Number tested (AC-2.4); label from Figma.                                   |
-| Success-screen dynamic content (confirmation-number format, exact copy)               | Success `1075:903`                                    | Name/email/event dynamic; 2025/TechConf are placeholders (§4).              |
-| Stepper + step-error-badge visuals                                                    | Wizard shell + `Review – Attendee (Error)` `1076:936` | Free-nav decided (D13); error-badge look from Figma.                        |
+| Item                                                                                  | Blocked on                                            | Note                                                                                                                                                             |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Track badge styles (main/frontend/backend/devops)                                     | Step 2 frame `1072:912`                               | **Resolved (Step 2):** main→`neutral-subtle`, frontend & devops→`accent-muted`, backend→`info-muted` (§4, D23). frontend ≡ devops — the frame duplicates orange. |
+| Discount display shape (separate `−$14.90` line vs struck-through per-workshop price) | Step 3 `1149:565` / Step 4 `1074:897`                 | Math is identical (AC-P-2); only the render assertion depends on the shape.                                                                                      |
+| Merch qty + size interaction (one picker + size vs per-size rows summing to max)      | Step 3 `1149:565`                                     | Total-max semantics fixed (D16); interaction shape from Figma.                                                                                                   |
+| `merch4` max-1 control (qty stepper stuck at 1 vs add/remove toggle)                  | Step 3 `1149:565`                                     | AC-3.7.                                                                                                                                                          |
+| Remaining-spots label ("13 spots left" vs "13/500")                                   | Step 2 `1072:912`                                     | Number tested (AC-2.4). **Resolved (Step 2):** "{n} spots left"; full → "Sold Out" (frame copy vs README "full", D24).                                           |
+| Success-screen dynamic content (confirmation-number format, exact copy)               | Success `1075:903`                                    | Name/email/event dynamic; 2025/TechConf are placeholders (§4).                                                                                                   |
+| Stepper + step-error-badge visuals                                                    | Wizard shell + `Review – Attendee (Error)` `1076:936` | Free-nav decided (D13); error-badge look from Figma.                                                                                                             |
 
 ---
 
@@ -557,10 +601,11 @@ Per-PR record of the human `review` gate — one row per merged PR (a PR is the 
 sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
 agent never self-approves.
 
-| PR                                                                              | Theme / branch                                                                                                                                                              | Reviewer  | Status                           |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
-| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests)                                                 | ll298lee  | **Merged** (2026-07-09)          |
-| [#7](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/7) | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper                                                        | ll298lee  | **Merged**                       |
-| [#8](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/8) | `chore/figma-dev-mode-mcp` — switch Figma read to official Dev Mode MCP + `figma-design-to-code` skill (D18)                                                                | ll298lee  | **Merged**                       |
-| [#9](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/9) | `fix/shell-devmode-reaudit` — shell re-verified against Dev Mode MCP: real N-emblem + stepper check SVGs, 13px labels, exact button padding/copy, phantom-border fix        | ll298lee  | **Merged** (2026-07-10)          |
-| #TBD                                                                            | `feat/step-1-attendee-info` — Step 1 Attendee Info: ticket cards (single-select, circle-check perks, stable-height selection) + attendee form; + code-comment policy (§1.7) | _pending_ | **Open — awaiting human review** |
+| PR                                                                                | Theme / branch                                                                                                                                                                                   | Reviewer  | Status                           |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- | -------------------------------- |
+| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6)   | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests)                                                                      | ll298lee  | **Merged** (2026-07-09)          |
+| [#7](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/7)   | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper                                                                             | ll298lee  | **Merged**                       |
+| [#8](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/8)   | `chore/figma-dev-mode-mcp` — switch Figma read to official Dev Mode MCP + `figma-design-to-code` skill (D18)                                                                                     | ll298lee  | **Merged**                       |
+| [#9](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/9)   | `fix/shell-devmode-reaudit` — shell re-verified against Dev Mode MCP: real N-emblem + stepper check SVGs, 13px labels, exact button padding/copy, phantom-border fix                             | ll298lee  | **Merged** (2026-07-10)          |
+| [#10](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/10) | `feat/step-1-attendee-info` — Step 1 Attendee Info: ticket cards (single-select, circle-check perks, stable-height selection) + attendee form; + code-comment policy (§1.7)                      | ll298lee  | **Merged** (2026-07-10)          |
+| #TBD                                                                              | `feat/step-2-session-selection` — Step 2 Session Selection: day-tab switcher (D23), session cards with track badges, capacity fill-tone bar + "Sold Out" full state (D24/D25), free multi-select | _pending_ | **Open — awaiting human review** |

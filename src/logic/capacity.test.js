@@ -1,4 +1,4 @@
-import { isFull, remainingSpots } from './capacity.js';
+import { isFull, remainingSpots, fillFraction } from './capacity.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
 import { addons as rawAddons } from '../mocks/addons.js';
@@ -43,6 +43,26 @@ describe('remainingSpots — capacity − registered', () => {
   it('uncapped meals/merch → null', () => {
     expect(remainingSpots(addon.meal1)).toBeNull();
     expect(remainingSpots(addon.merch1)).toBeNull();
+  });
+});
+
+describe('fillFraction — capacity filled, clamped [0,1]', () => {
+  // Drives the Step 2 capacity bar (D25). Must agree with the spots label across items.
+  it('matches registered/capacity for capped sessions', () => {
+    expect(fillFraction(session.s6)).toBeCloseTo(41 / 100); // low band
+    expect(fillFraction(session.s3)).toBeCloseTo(78 / 100); // high band
+    expect(fillFraction(session.s2)).toBe(1); // full → Sold Out
+  });
+
+  it('uncapped meals/merch report 0', () => {
+    expect(fillFraction(addon.meal1)).toBe(0);
+    expect(fillFraction(addon.merch1)).toBe(0);
+  });
+
+  it('clamps over-capacity to 1 and never divides by zero', () => {
+    expect(fillFraction({ capacity: 10, registered: 15 })).toBe(1);
+    expect(fillFraction({ capacity: 0, registered: 0 })).toBe(0);
+    expect(fillFraction({ capacity: 100 })).toBe(0);
   });
 });
 

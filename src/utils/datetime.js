@@ -14,6 +14,31 @@
 
 const PERIOD = { AM: 'AM', PM: 'PM' };
 
+const MONTHS_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/**
+ * Wall-clock short day label `MMM D` (e.g. `Nov 15`), used for the Step 2 day tabs.
+ * Reads UTC fields so the label never shifts across the viewer's local-midnight boundary.
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDayLabel(date) {
+  return `${MONTHS_SHORT[date.getUTCMonth()]} ${date.getUTCDate()}`;
+}
+
 /**
  * Format a Date's wall-clock time as `h:mm AM/PM` (e.g. `3:30 PM`).
  * @param {Date} date
