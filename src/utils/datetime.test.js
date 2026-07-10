@@ -1,4 +1,10 @@
-import { formatTime, formatTimeRange, dayGroupKey, formatDayLabel } from './datetime.js';
+import {
+  formatTime,
+  formatTimeRange,
+  dayGroupKey,
+  formatDayLabel,
+  formatDateTimeRange,
+} from './datetime.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
 import { addons as rawAddons } from '../mocks/addons.js';
@@ -52,5 +58,13 @@ describe('formatDayLabel — wall-clock day tab label (D4)', () => {
   // AC-T-1 — ws2 (18:30Z) labels Nov 15; a +8 local offset would read Nov 16.
   it('reads UTC fields so no local shift (ws2 18:30Z → Nov 15)', () => {
     expect(formatDayLabel(addon.ws2.start)).toBe('Nov 15');
+  });
+});
+
+describe('formatDateTimeRange — Step 3 workshop date + time (D28)', () => {
+  // ws1 (Nov 16, 14:00–17:00Z) and ws2 (Nov 15, 15:30–18:30Z) render date + wall-clock time.
+  it('prefixes the wall-clock day to the time range', () => {
+    expect(formatDateTimeRange(addon.ws1.start, addon.ws1.end)).toBe('Nov 16, 2:00 PM – 5:00 PM');
+    expect(formatDateTimeRange(addon.ws2.start, addon.ws2.end)).toBe('Nov 15, 3:30 PM – 6:30 PM');
   });
 });
