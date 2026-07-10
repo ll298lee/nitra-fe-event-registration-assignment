@@ -5,15 +5,17 @@ import { useRegistration } from '../../composables/useRegistration.js';
 import { conflictingSessions } from '../../logic/conflicts.js';
 import { isFull } from '../../logic/capacity.js';
 import WorkshopCard from './WorkshopCard.vue';
+import MealCard from './MealCard.vue';
 import MerchCard from './MerchCard.vue';
 import ShippingBanner from './ShippingBanner.vue';
 import OrderSummaryPanel from './OrderSummaryPanel.vue';
 
 // Step 3 — Add-ons. Add-ons are grouped by category into a segmented tab control (D27);
-// the Workshops and Merchandise tabs + the live order-summary sidebar are wired. The
-// Meal Packages tab lands in a later PR (D31a).
+// all three tabs (Workshops / Meal Packages / Merchandise) + the live order-summary
+// sidebar are wired.
 
-const { selectedSessionIds, selectedWorkshopIds, merchSelections } = useRegistration();
+const { selectedSessionIds, selectedWorkshopIds, selectedMealIds, merchSelections } =
+  useRegistration();
 
 const uid = useId();
 const ticketTypes = ref([]);
@@ -46,6 +48,7 @@ const activeIndex = ref(0);
 const activeCategory = computed(() => CATEGORIES[activeIndex.value]);
 
 const workshops = computed(() => addons.value.filter((a) => a.category === 'workshop'));
+const meals = computed(() => addons.value.filter((a) => a.category === 'meal'));
 const merchandise = computed(() => addons.value.filter((a) => a.category === 'merchandise'));
 
 const selectedSessions = computed(() =>
@@ -72,6 +75,17 @@ function toggleWorkshop(id) {
   const workshop = workshops.value.find((w) => w.id === id);
   if (!workshop || isFull(workshop) || conflictsByWorkshop.value.get(id)?.length) return;
   selectedWorkshopIds.value = [...selectedWorkshopIds.value, id];
+}
+
+// Meals are the simplest add-on — no capacity or time slot, so no conflict/full guard: a
+// plain multi-select toggle into selectedMealIds (both packages are independently selectable).
+function isMealSelected(id) {
+  return selectedMealIds.value.includes(id);
+}
+function toggleMeal(id) {
+  selectedMealIds.value = isMealSelected(id)
+    ? selectedMealIds.value.filter((x) => x !== id)
+    : [...selectedMealIds.value, id];
 }
 
 // Merch is stored per id as { size, quantity } (D16/D26). A size picked before the first
@@ -169,14 +183,10 @@ function onTabKeydown(e) {
 
         <ShippingBanner v-if="anyMerchAdded" />
 
-        <!-- Only the Meal placeholder panel is a tab stop: it holds non-focusable text, whereas
-             the Workshops and Merchandise panels contain their own focusable controls. Remove
-             this condition when the Meals card lands (D31a) — its cards are focusable. -->
         <div
           :id="`${uid}-panel`"
           role="tabpanel"
           :aria-labelledby="`${uid}-tab-${activeIndex}`"
-          :tabindex="activeCategory.key === 'meal' ? 0 : undefined"
           class="flex flex-col gap-4"
         >
           <template v-if="activeCategory.key === 'workshop'">
@@ -187,6 +197,16 @@ function onTabKeydown(e) {
               :selected="isWorkshopSelected(ws.id)"
               :conflicts="conflictsByWorkshop.get(ws.id) ?? []"
               @toggle="toggleWorkshop"
+            />
+          </template>
+
+          <template v-else-if="activeCategory.key === 'meal'">
+            <MealCard
+              v-for="meal in meals"
+              :key="meal.id"
+              :meal="meal"
+              :selected="isMealSelected(meal.id)"
+              @toggle="toggleMeal"
             />
           </template>
 
@@ -202,10 +222,6 @@ function onTabKeydown(e) {
               @select-size="selectMerchSize"
             />
           </template>
-
-          <p v-else class="text-sm font-regular text-neutral-quiet">
-            {{ activeCategory.label }} selection is coming in the next update.
-          </p>
         </div>
       </div>
 

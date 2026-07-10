@@ -29,19 +29,33 @@ export function round2(amount) {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
+const wholeDollarFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+const centsFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 /**
- * Format a number as USD: `$X,XXX.XX` — always two decimals, thousands separators.
- * (IMPLEMENTATION_PLAN.md D5.)
+ * Format a number as USD, thousands-separated. Whole-dollar amounts show no cents
+ * (`$1,234`); amounts with a fractional part show two-decimal cents (`$14.90`). Per the
+ * Figma visual spec, prices omit decimals unless the value actually carries cents — the
+ * VIP discount ($14.90) and discounted totals keep their cents (IMPLEMENTATION_PLAN.md
+ * D42, supersedes the always-two-decimal D5).
  * @param {number} amount
  * @returns {string}
  */
 export function formatCurrency(amount) {
-  return currencyFormatter.format(amount);
+  return Number.isInteger(amount)
+    ? wholeDollarFormatter.format(amount)
+    : centsFormatter.format(amount);
 }
 
 /**

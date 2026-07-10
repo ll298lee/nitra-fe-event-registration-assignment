@@ -23,11 +23,11 @@ function mountPanel() {
 }
 
 describe('OrderSummaryPanel (Step 3 running total — AC-3.11, D29)', () => {
-  it('shows an empty state and a $0.00 total before anything is selected', () => {
+  it('shows an empty state and a $0 total before anything is selected', () => {
     const w = mountPanel();
     expect(w.text()).toContain('Nothing selected yet.');
     expect(w.text()).toContain('Total');
-    expect(w.text()).toContain('$0.00');
+    expect(w.text()).toContain('$0');
   });
 
   it('labels the ticket line "{name} Ticket" with its price', async () => {
@@ -35,7 +35,7 @@ describe('OrderSummaryPanel (Step 3 running total — AC-3.11, D29)', () => {
     store.ticketId.value = 'general';
     await nextTick();
     expect(w.text()).toContain('General Ticket');
-    expect(w.text()).toContain('$299.00');
+    expect(w.text()).toContain('$299');
   });
 
   // AC-3.11 / AC-P-2 — VIP + ws1 shows the workshop line, the teal discount line, and $733.10.
@@ -60,7 +60,7 @@ describe('OrderSummaryPanel (Step 3 running total — AC-3.11, D29)', () => {
     await nextTick();
 
     expect(w.text()).not.toContain('Workshop discount');
-    expect(w.text()).toContain('$448.00'); // 299 + 149
+    expect(w.text()).toContain('$448'); // 299 + 149
   });
 
   // AC-3.11 — a merch line renders "{name} × {qty}" and updates the total live.
@@ -71,7 +71,7 @@ describe('OrderSummaryPanel (Step 3 running total — AC-3.11, D29)', () => {
     await nextTick();
 
     expect(w.text()).toContain('Conference T-Shirt × 2');
-    expect(w.text()).toContain('$70.00');
-    expect(w.text()).toContain('$369.00'); // 299 + 70
+    expect(w.text()).toContain('$70');
+    expect(w.text()).toContain('$369'); // 299 + 70
   });
 });

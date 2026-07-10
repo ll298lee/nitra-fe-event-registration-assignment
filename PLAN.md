@@ -803,3 +803,58 @@ heading/number + personalized thank-you, emits `home`. `IndexPage.spec.js` — a
 success screen with the confirmation # + dynamic name/email; a double-submit is guarded while in
 flight; "Back to Home" resets to a pristine Step 1. `facade.test.js` already covered the
 confirmation-number format + echo.
+
+## feat(addons): step 3 meal package selection
+
+The last Step-3 add-on category. A new `MealCard` fills the previously-placeholder Meal
+Packages tab in `StepAddons`; selecting a meal toggles it into `selectedMealIds`, which the
+existing `useOrderSummary` engine and the Step-4 review already priced and listed — so this
+change is UI-only.
+
+**Figma provides no visual spec for meal packages** — meals appear only as a tab _label_,
+never as a card. Per the ask, I designed the card from the **common Step-3 card pattern
+(Workshops + Merchandise)**: a meal is a selectable toggle add-on with no quantity, capacity,
+or time, so `MealCard` reuses the `WorkshopCard` treatment wholesale **minus** the time/
+capacity/conflict rows — header (name + price), description, and the shift-free selection
+ring. Recorded as **D41** (confirms the earlier D31a plan).
+
+Judgment calls (flagged for review):
+
+- **Teal price + cents, inherited by reusing `WorkshopCard` verbatim** — the two priced-
+  _toggle_ add-ons (workshop, meal) share a treatment; merch (a quantity add-on) keeps
+  neutral/no-cents. Switching meals to match merch is a one-line change if preferred.
+- **Plain multi-select, no conflict/full guard** (meals have no capacity or time slot, so
+  both packages are independently selectable and the workshop guard would be dead code); no
+  "✓ Added" footer, following `WorkshopCard` not `MerchCard`. Also removed the meal-
+  placeholder tabpanel `tabindex=0` hack now that every panel holds focusable controls.
+
+192 tests green, `yarn check` clean; verified in-browser (`agent-browser` `getComputedStyle`
+@1440px) byte-identical to `WorkshopCard`, selection ring renders (no UnoCSS static-scan issue).
+Tests: `MealCard.spec.js` (new) + `StepAddons.spec.js` meal block (both cards in order AC-3.12;
+toggle on/off + live total + `aria-checked`, both selectable together AC-3.13).
+
+## fix(pricing): whole-dollar prices show no cents
+
+Per the Figma visual spec (user-directed), all displayed prices drop the `.00` — **unless the
+value genuinely has cents, in which case the cents are kept**. So `formatCurrency` now branches on
+`Number.isInteger`: whole dollars format with no fraction digits (`$45`, `$299`, `$1,234`), and
+fractional amounts keep two decimals (the VIP discount `$14.90`, discounted totals `$733.10`).
+Recorded as **D42** (supersedes D5's always-two-decimals); it also resolves the D41 meal-price
+cents flag (the price-colour flag stays open).
+
+Key points:
+
+- **Display-only, zero precision loss.** The fix lives entirely in the one shared `formatCurrency`
+  primitive, so every price display inherits it and the pricing engine keeps exact values — the VIP
+  discount is still precisely `14.9` and the killer-sequence math is untouched. Rounding everything
+  to whole dollars was rejected: it would misreport the `$14.90` discount as `$15`.
+- **Preserves the measured Figma discount.** D29 measured the order-summary discount as `-$14.90`;
+  that's fractional, so it keeps its cents. Only whole-dollar item prices/totals lose the trailing
+  `.00`. Ticket/merch cards + the Step-4 `dollars` helper already rendered whole dollars.
+- **Test split for rigor:** engine tests assert exact **numeric** values + the fractional strings
+  (`$14.90`), the formatter's own test locks the whole-vs-fractional rule, and component tests
+  assert the rendered no-cents strings.
+
+192 tests green, `yarn check` clean; verified in-browser @1440px — Step-3 workshop `$149`, meal
+`$45`/`$89`, ticket line `$599` (all whole, no cents); the VIP order summary keeps `-$14.90` and
+`$733.10`.
