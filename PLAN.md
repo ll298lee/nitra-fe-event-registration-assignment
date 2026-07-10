@@ -1063,3 +1063,40 @@ responsive frames, so the breakpoint behavior is a spec-gap fill — mobile-firs
   no page overflow (verified 375/360/320). **(2)** hiding non-current stepper labels with
   `display:none` dropped them from the accessibility tree (bare-digit / unnamed buttons on mobile);
   added `:aria-label="step.label"` to every step button. Both covered by new/updated stepper specs.
+
+## feat(i18n): extract UI copy behind vue-i18n (en + zh-TW)
+
+Final Phase-4 change (D14/D45). Added `vue-i18n@11`, a boot file, and `src/i18n/{index,en,zh-TW}.js`,
+then moved **all app-chrome copy** into the locale files and pointed every component at it (`$t` in
+templates, `useI18n({useScope:'global'})` in scripts).
+
+- **What changed.** Every heading, label, placeholder, button, banner, validation and time-conflict
+  string is now a locale key (105 keys, `en` mirrored by `zh-TW`). A header **`EN | 中文` switcher**
+  (spec-gap fill — the frame has no switcher) toggles the locale; `en` is the default so the English
+  UI stays byte-identical to Figma.
+- **Judgment call — validation stays framework-free (user-chosen).** `validation.js` takes an injected
+  `t(key, params)` and returns strings; `useValidation` supplies `useI18n().t`, and the pure-logic
+  tests pass the real `i18n.global.t` so their assertions are unchanged. Chosen over returning error
+  codes (smaller, lower-risk diff) while still keeping `logic/` free of any `vue`/`vue-i18n` import.
+- **Judgment call — zh-TW is new scope.** D14 asked only for `en`; the user added Traditional Chinese.
+  i18n is a plan decision (never in `README.md`), so the delta is recorded in IMPLEMENTATION_PLAN.md
+  (D45), not a `SPEC_ADDENDUM.md`.
+- **Why `src/mocks/*` is NOT translated.** The user directed that anything under `/mocks` must not be
+  touched, and it is the right boundary anyway: mock content (event/ticket/session/add-on **names,
+  descriptions, perks, prices**) is **data, not UI copy** — a registration app localizes its own
+  chrome, not the catalogue it's fed. So a `zh-TW` user sees Chinese chrome around the English event
+  data, and the mock files are untouched. By the same reasoning **date/currency formatting is left as
+  data too** (locale-independent formatters, not copy) — both locales render `Nov 15` / `$299`
+  identically, which also keeps `datetime`'s deterministic Figma-parity intact. Both flagged for a
+  possible follow-up if full number/date localization is later wanted.
+- **Drift fix.** Time-conflict copy that previously lived twice (WorkshopCard status + `validation.js`
+  builder, the D34d known-consequence) now shares one `conflict.*` namespace, so the two surfaces
+  cannot diverge.
+- **Tests.** `setup-file.js` installs i18n globally so every existing component/logic test runs
+  against the real `en` copy — a regression guard that all rendered strings still resolve. 201 tests
+  green, `yarn check` clean. `en`/`zh-TW` key + placeholder parity checked programmatically (105/105).
+  Verified in-browser @1440 in both locales (Step 1 + the Step-4 validation-error state).
+- **Trap (worth remembering).** Vue's `whitespace: 'condense'` strips the leading space when a text
+  node ` ` immediately precedes an interpolation, so `<span> {{ $t('field.optional') }}</span>`
+  rendered `Shipping Address(Optional)` (no space); fixed by folding the space into the expression:
+  `{{ ' ' + $t('field.optional') }}`.

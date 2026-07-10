@@ -10,9 +10,11 @@
  * The functions never mutate the registration — a stale conflict is reported, not
  * silently removed (D10, AC-4.6).
  *
- * Copy note (D14 / D34): the user-facing strings live here for now (deferred i18n) and
- * are centralized in the message builders below so the Phase-4 locale extraction has a
- * single place to relocate them.
+ * Copy note (D14 / D34 / D45): user-facing messages are produced through an injected
+ * `t(key, params)` translator (vue-i18n), passed in by the `useValidation` composable, so
+ * this layer stays framework-free and unit-testable. The copy itself lives in `src/i18n/*`,
+ * keyed under `validation.*` and (for time conflicts) `conflict.*` — the latter shared with
+ * `WorkshopCard` so the two surfaces cannot drift.
  */
 
 import { detectConflicts, conflictingSessions } from './conflicts.js';
@@ -65,17 +67,6 @@ export function hasMerchSelected(merchSelections) {
   return Object.values(merchSelections ?? {}).some((sel) => (sel?.quantity ?? 0) >= 1);
 }
 
-// ── Messages (deferred-i18n copy, D14/D34) ──
-
-const requiredMsg = (label) => `${label} is required`;
-const INVALID_EMAIL = 'Enter a valid email address';
-const INVALID_PHONE = 'Enter a valid phone number';
-const SHIPPING_REQUIRED = 'Shipping Address is required when merchandise is selected';
-const TICKET_REQUIRED = 'Please select a ticket type';
-const sessionConflictMsg = (a, b) => `${a.title} overlaps with ${b.title}`;
-const workshopConflictMsg = (workshop, session) =>
-  `${workshop.name} overlaps with ${session.title}`;
-
 // ── Per-step validators ──
 
 /**
@@ -84,25 +75,27 @@ const workshopConflictMsg = (workshop, session) =>
  * `shippingRequired` is the cross-step condition (merch selected in Step 3, D9).
  * @param {Object} [attendee]
  * @param {{ shippingRequired?: boolean }} [options]
+ * @param {(key: string, params?: object) => string} t  Injected i18n translator (D45).
  * @returns {Record<string, string>} field → message, only for failing fields.
  */
-export function validateAttendee(attendee, { shippingRequired = false } = {}) {
+export function validateAttendee(attendee, { shippingRequired = false } = {}, t) {
   const a = attendee ?? {};
   const errors = {};
+  const required = (field) => t('validation.required', { label: t(`validation.labels.${field}`) });
 
-  if (!isPresent(a.fullName)) errors.fullName = requiredMsg('Full Name');
+  if (!isPresent(a.fullName)) errors.fullName = required('fullName');
 
-  if (!isPresent(a.email)) errors.email = requiredMsg('Email');
-  else if (!isValidEmail(a.email)) errors.email = INVALID_EMAIL;
+  if (!isPresent(a.email)) errors.email = required('email');
+  else if (!isValidEmail(a.email)) errors.email = t('validation.emailInvalid');
 
-  if (!isPresent(a.phone)) errors.phone = requiredMsg('Phone');
-  else if (!isValidPhone(a.phone)) errors.phone = INVALID_PHONE;
+  if (!isPresent(a.phone)) errors.phone = required('phone');
+  else if (!isValidPhone(a.phone)) errors.phone = t('validation.phoneInvalid');
 
-  if (!isPresent(a.company)) errors.company = requiredMsg('Company');
-  if (!isPresent(a.jobTitle)) errors.jobTitle = requiredMsg('Job Title');
+  if (!isPresent(a.company)) errors.company = required('company');
+  if (!isPresent(a.jobTitle)) errors.jobTitle = required('jobTitle');
 
   if (shippingRequired && !isPresent(a.shippingAddress)) {
-    errors.shippingAddress = SHIPPING_REQUIRED;
+    errors.shippingAddress = t('validation.shippingRequired');
   }
 
   return errors;
@@ -113,10 +106,13 @@ export function validateAttendee(attendee, { shippingRequired = false } = {}) {
  * this to submit and asks that "the relevant step be indicated with errors" — so it
  * flags Step 2 (D34). Each conflicting pair yields one message naming both sessions.
  * @param {{ id: string, title: string, start: Date, end: Date }[]} selectedSessions
+ * @param {(key: string, params?: object) => string} t  Injected i18n translator (D45).
  * @returns {string[]}
  */
-export function sessionConflictErrors(selectedSessions) {
-  return detectConflicts(selectedSessions).map(([a, b]) => sessionConflictMsg(a, b));
+export function sessionConflictErrors(selectedSessions, t) {
+  return detectConflicts(selectedSessions).map(([a, b]) =>
+    t('conflict.session', { a: a.title, b: b.title })
+  );
 }
 
 /**
@@ -126,13 +122,14 @@ export function sessionConflictErrors(selectedSessions) {
  * reported at submit (D10).
  * @param {{ name: string, start?: Date, end?: Date }[]} selectedWorkshops
  * @param {{ id: string, title: string, start: Date, end: Date }[]} selectedSessions
+ * @param {(key: string, params?: object) => string} t  Injected i18n translator (D45).
  * @returns {string[]}
  */
-export function workshopConflictErrors(selectedWorkshops, selectedSessions) {
+export function workshopConflictErrors(selectedWorkshops, selectedSessions, t) {
   const errors = [];
   for (const workshop of selectedWorkshops) {
     for (const session of conflictingSessions(workshop, selectedSessions)) {
-      errors.push(workshopConflictMsg(workshop, session));
+      errors.push(t('conflict.workshop', { workshop: workshop.name, session: session.title }));
     }
   }
   return errors;
@@ -157,9 +154,10 @@ function byId(list) {
  *   merchSelections?: Object,
  * }} state  Plain snapshot of the wizard store (the useValidation composable unwraps refs).
  * @param {{ sessions?: Object[], addons?: Object[] }} [sources]  Normalized reference data.
+ * @param {(key: string, params?: object) => string} t  Injected i18n translator (D45).
  * @returns {{ attendee: Record<string, string>, sessions: string[], addons: string[] }}
  */
-export function validateAll(state, sources = {}) {
+export function validateAll(state, sources = {}, t) {
   const s = state ?? {};
   const sessionMap = byId(sources.sessions);
   const addonMap = byId(sources.addons);
@@ -171,18 +169,20 @@ export function validateAll(state, sources = {}) {
     .map((id) => addonMap.get(id))
     .filter(Boolean);
 
-  const attendee = validateAttendee(s.attendee, {
-    shippingRequired: hasMerchSelected(s.merchSelections),
-  });
+  const attendee = validateAttendee(
+    s.attendee,
+    { shippingRequired: hasMerchSelected(s.merchSelections) },
+    t
+  );
   // Ticket selection is mandatory to register (README Step 1) though it is not one of
   // the tabulated "fields" — a deliberate spec-gap fill flagged for review (D34). It is
   // a Step-1 concern, so it rides in the attendee group and flags Step 1.
-  if (!s.ticketId) attendee.ticketId = TICKET_REQUIRED;
+  if (!s.ticketId) attendee.ticketId = t('validation.ticketRequired');
 
   return {
     attendee,
-    sessions: sessionConflictErrors(selectedSessions),
-    addons: workshopConflictErrors(selectedWorkshops, selectedSessions),
+    sessions: sessionConflictErrors(selectedSessions, t),
+    addons: workshopConflictErrors(selectedWorkshops, selectedSessions, t),
   };
 }
 
@@ -218,15 +218,16 @@ const STEP_NUMBER = { attendee: 1, sessions: 2, addons: 3 };
  * for the Step-4 error-summary banner (D37, README §4.5). One entry per individual error
  * (each missing/invalid field, each time conflict) — attendee first, then sessions, then addons.
  * @param {ReturnType<typeof validateAll>} [errors]
+ * @param {(key: string, params?: object) => string} t  Injected i18n translator (D45).
  * @returns {string[]}
  */
-export function summarizeErrors(errors = {}) {
+export function summarizeErrors(errors = {}, t) {
+  const line = (step, message) => t('step4.errorLine', { step, message });
   const lines = [];
   for (const message of Object.values(errors.attendee ?? {})) {
-    lines.push(`Step ${STEP_NUMBER.attendee}: ${message}`);
+    lines.push(line(STEP_NUMBER.attendee, message));
   }
-  for (const message of errors.sessions ?? [])
-    lines.push(`Step ${STEP_NUMBER.sessions}: ${message}`);
-  for (const message of errors.addons ?? []) lines.push(`Step ${STEP_NUMBER.addons}: ${message}`);
+  for (const message of errors.sessions ?? []) lines.push(line(STEP_NUMBER.sessions, message));
+  for (const message of errors.addons ?? []) lines.push(line(STEP_NUMBER.addons, message));
   return lines;
 }

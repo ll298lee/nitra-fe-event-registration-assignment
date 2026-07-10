@@ -13,7 +13,7 @@ defineProps({
     role="alert"
     tabindex="-1"
   >
-    <p class="text-sm font-medium text-danger">Please fix the following errors before submitting</p>
+    <p class="text-sm font-medium text-danger">{{ $t('step4.errorBannerTitle') }}</p>
     <ul class="flex flex-col gap-2">
       <li v-for="(item, i) in items" :key="i" class="text-sm font-regular text-danger">
         • {{ item }}

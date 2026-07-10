@@ -58,7 +58,7 @@ defineEmits(['select']);
       class="mt-auto inline-flex w-fit items-center rounded-full bg-success-bold-rest px-[9px] py-[3px] text-[11px] font-medium leading-[14px] text-inverse"
       :class="{ invisible: !selected }"
     >
-      ✓ Selected
+      {{ $t('step1.ticketSelected') }}
     </span>
   </button>
 </template>

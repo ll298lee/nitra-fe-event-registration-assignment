@@ -41,7 +41,7 @@ function connectorClass(i) {
 </script>
 
 <template>
-  <nav class="flex items-center" aria-label="Registration progress">
+  <nav class="flex items-center" :aria-label="$t('stepper.aria')">
     <template v-for="(step, i) in steps" :key="step.key ?? i">
       <button
         type="button"

@@ -4,13 +4,18 @@ import { createRegistration } from './useRegistration.js';
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
 import { addons as rawAddons } from '../mocks/addons.js';
+import { i18n } from '../i18n/index.js';
 
 const sessions = normalizeSessions(rawSessions);
 const addons = normalizeAddons(rawAddons);
 
+// The composable takes an injected translator (D45); supply the real `en` one so the
+// assertions below read against the actual shipped copy.
+const t = i18n.global.t;
+
 function setup() {
   const reg = createRegistration();
-  const validation = createValidation(reg, { sessions, addons });
+  const validation = createValidation(reg, { sessions, addons }, t);
   return { reg, validation };
 }
 

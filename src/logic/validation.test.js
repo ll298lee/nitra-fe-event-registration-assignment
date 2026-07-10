@@ -14,12 +14,17 @@ import {
 import { normalizeSessions, normalizeAddons } from '../data/normalize.js';
 import { sessions as rawSessions } from '../mocks/sessions.js';
 import { addons as rawAddons } from '../mocks/addons.js';
+import { i18n } from '../i18n/index.js';
 
 const sessions = normalizeSessions(rawSessions);
 const addons = normalizeAddons(rawAddons);
 const sources = { sessions, addons };
 const session = Object.fromEntries(sessions.map((s) => [s.id, s]));
 const addon = Object.fromEntries(addons.map((a) => [a.id, a]));
+
+// The validators take an injected translator (D45); supply the real `en` one so these
+// assertions read against the actual shipped copy.
+const t = i18n.global.t;
 
 const validAttendee = () => ({
   fullName: 'Ada Lovelace',
@@ -97,7 +102,7 @@ describe('hasMerchSelected (AC-V-4, AC-1.6/1.7)', () => {
 
 describe('validateAttendee (AC-V-1)', () => {
   it('errors every required field when the attendee is empty', () => {
-    const errors = validateAttendee({});
+    const errors = validateAttendee({}, {}, t);
     for (const field of ['fullName', 'email', 'phone', 'company', 'jobTitle']) {
       expect(errors).toHaveProperty(field);
     }
@@ -106,44 +111,48 @@ describe('validateAttendee (AC-V-1)', () => {
   });
 
   it('passes a fully valid attendee with no errors', () => {
-    expect(validateAttendee(validAttendee())).toEqual({});
+    expect(validateAttendee(validAttendee(), {}, t)).toEqual({});
   });
 
   it('flags a present-but-malformed email/phone with the format message, not "required"', () => {
-    const errors = validateAttendee({ ...validAttendee(), email: 'a@b', phone: '12' });
+    const errors = validateAttendee({ ...validAttendee(), email: 'a@b', phone: '12' }, {}, t);
     expect(errors.email).toBe('Enter a valid email address');
     expect(errors.phone).toBe('Enter a valid phone number');
   });
 
   it('makes shipping required only when merch is present (AC-V-4, non-sticky)', () => {
     const base = { ...validAttendee(), shippingAddress: '' };
-    expect(validateAttendee(base, { shippingRequired: false })).not.toHaveProperty(
+    expect(validateAttendee(base, { shippingRequired: false }, t)).not.toHaveProperty(
       'shippingAddress'
     );
-    expect(validateAttendee(base, { shippingRequired: true })).toHaveProperty('shippingAddress');
+    expect(validateAttendee(base, { shippingRequired: true }, t)).toHaveProperty('shippingAddress');
     // With an address supplied, the requirement is satisfied.
     expect(
-      validateAttendee({ ...base, shippingAddress: '1 Infinite Loop' }, { shippingRequired: true })
+      validateAttendee(
+        { ...base, shippingAddress: '1 Infinite Loop' },
+        { shippingRequired: true },
+        t
+      )
     ).not.toHaveProperty('shippingAddress');
   });
 });
 
 describe('sessionConflictErrors (README Step 2 §2, D34)', () => {
   it('flags a selected overlapping pair and names both sessions', () => {
-    const errors = sessionConflictErrors([session.s4, session.s5]);
+    const errors = sessionConflictErrors([session.s4, session.s5], t);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(session.s4.title);
     expect(errors[0]).toContain(session.s5.title);
   });
 
   it('is silent for back-to-back sessions (touch ≠ conflict, D6)', () => {
-    expect(sessionConflictErrors([session.s10, session.s11])).toEqual([]);
+    expect(sessionConflictErrors([session.s10, session.s11], t)).toEqual([]);
   });
 });
 
 describe('workshopConflictErrors (AC-3.3/3.4, D9)', () => {
   it('flags ws1 against s11 and s12, naming each session', () => {
-    const errors = workshopConflictErrors([addon.ws1], [session.s11, session.s12]);
+    const errors = workshopConflictErrors([addon.ws1], [session.s11, session.s12], t);
     expect(errors).toHaveLength(2);
     expect(errors.join(' ')).toContain(session.s11.title);
     expect(errors.join(' ')).toContain(session.s12.title);
@@ -151,17 +160,17 @@ describe('workshopConflictErrors (AC-3.3/3.4, D9)', () => {
   });
 
   it('does not flag ws1 against s10 (touch at 14:00Z)', () => {
-    expect(workshopConflictErrors([addon.ws1], [session.s10])).toEqual([]);
+    expect(workshopConflictErrors([addon.ws1], [session.s10], t)).toEqual([]);
   });
 
   it('never flags a non-timed add-on (meal/merch) against a session', () => {
-    expect(workshopConflictErrors([addon.meal1, addon.merch1], [session.s11])).toEqual([]);
+    expect(workshopConflictErrors([addon.meal1, addon.merch1], [session.s11], t)).toEqual([]);
   });
 });
 
 describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
   it('returns an all-clear per-step map for a valid registration', () => {
-    const errors = validateAll(validState(), sources);
+    const errors = validateAll(validState(), sources, t);
     expect(errors).toEqual({ attendee: {}, sessions: [], addons: [] });
     expect(isValid(errors)).toBe(true);
     expect(errorStepKeys(errors)).toEqual([]);
@@ -177,7 +186,8 @@ describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
         selectedMealIds: [],
         merchSelections: { merch1: { size: 'M', quantity: 1 } }, // → shipping required (Step 1)
       },
-      sources
+      sources,
+      t
     );
 
     expect(errors.attendee).toHaveProperty('email');
@@ -198,7 +208,8 @@ describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
         selectedWorkshopIds: ['ws1'], // ws1 (14:00–17:00) overlaps s11 (14:00–15:30)
         merchSelections: { merch2: { quantity: 2 } },
       },
-      sources
+      sources,
+      t
     );
     expect(errors.attendee).toHaveProperty('shippingAddress'); // Step 1
     expect(errors.addons).toHaveLength(1); // Step 3
@@ -214,7 +225,7 @@ describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
       selectedWorkshopIds: ['ws1'],
       merchSelections: {},
     };
-    const errors = validateAll(state, sources);
+    const errors = validateAll(state, sources, t);
 
     expect(errors.addons).toHaveLength(1);
     expect(errors.addons[0]).toContain(session.s11.title);
@@ -223,17 +234,17 @@ describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
   });
 
   it('requires a ticket to be selected — Step-1 spec-gap fill (D34)', () => {
-    const errors = validateAll({ ...validState(), ticketId: null }, sources);
+    const errors = validateAll({ ...validState(), ticketId: null }, sources, t);
     expect(errors.attendee).toHaveProperty('ticketId');
     expect(errorStepKeys(errors)).toContain('attendee');
 
-    const ok = validateAll({ ...validState(), ticketId: 'vip' }, sources);
+    const ok = validateAll({ ...validState(), ticketId: 'vip' }, sources, t);
     expect(ok.attendee).not.toHaveProperty('ticketId');
   });
 
   it('tolerates missing sources and selections without throwing', () => {
-    expect(() => validateAll({}, {})).not.toThrow();
-    const errors = validateAll({}, {});
+    expect(() => validateAll({}, {}, t)).not.toThrow();
+    const errors = validateAll({}, {}, t);
     // No attendee data → all required fields + ticket flagged; no conflict arrays throw.
     expect(errorStepKeys(errors)).toEqual(['attendee']);
     expect(errors.sessions).toEqual([]);
@@ -251,7 +262,8 @@ describe('validateAll — unified per-step map (AC-4.4, AC-V-6)', () => {
         selectedWorkshopIds: ['ws1'],
         merchSelections: {},
       },
-      sources
+      sources,
+      t
     );
     expect(errors.attendee).toEqual({});
     expect(errors.sessions).toHaveLength(1);
@@ -276,7 +288,7 @@ describe('summarizeErrors — Step-4 error banner list (D37, AC-4.5)', () => {
       sessions: ['A overlaps with B'],
       addons: ['Workshop overlaps with C'],
     };
-    expect(summarizeErrors(errors)).toEqual([
+    expect(summarizeErrors(errors, t)).toEqual([
       'Step 1: Phone is required',
       'Step 1: Company is required',
       'Step 2: A overlaps with B',
@@ -285,8 +297,8 @@ describe('summarizeErrors — Step-4 error banner list (D37, AC-4.5)', () => {
   });
 
   it('returns [] for a clean / partial result', () => {
-    expect(summarizeErrors({ attendee: {}, sessions: [], addons: [] })).toEqual([]);
-    expect(summarizeErrors({})).toEqual([]);
-    expect(summarizeErrors(undefined)).toEqual([]);
+    expect(summarizeErrors({ attendee: {}, sessions: [], addons: [] }, t)).toEqual([]);
+    expect(summarizeErrors({}, t)).toEqual([]);
+    expect(summarizeErrors(undefined, t)).toEqual([]);
   });
 });

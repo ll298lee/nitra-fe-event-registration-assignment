@@ -40,9 +40,6 @@ const activeDayIndex = ref(0);
 const activeDay = computed(() => days.value[activeDayIndex.value] ?? null);
 
 const selectedCount = computed(() => selectedSessionIds.value.length);
-const counterLabel = computed(
-  () => `${selectedCount.value} session${selectedCount.value === 1 ? '' : 's'} selected`
-);
 
 function isSelected(id) {
   return selectedSessionIds.value.includes(id);
@@ -72,7 +69,7 @@ function onTabKeydown(e) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <h2 class="text-h3 text-neutral">Select Sessions</h2>
+    <h2 class="text-h3 text-neutral">{{ $t('step2.heading') }}</h2>
 
     <div v-if="loading" class="flex flex-col gap-6" aria-hidden="true">
       <q-skeleton width="176px" height="40px" class="rounded-[10px]" />
@@ -86,7 +83,7 @@ function onTabKeydown(e) {
       <div
         ref="tablistRef"
         role="tablist"
-        aria-label="Session day"
+        :aria-label="$t('step2.dayAria')"
         class="inline-flex w-fit max-w-full flex-wrap gap-1 rounded-[10px] bg-surface-l2 p-1 tablet:flex-nowrap"
         @keydown="onTabKeydown"
       >
@@ -111,7 +108,9 @@ function onTabKeydown(e) {
         </button>
       </div>
 
-      <p class="text-sm font-medium text-neutral-muted">{{ counterLabel }}</p>
+      <p class="text-sm font-medium text-neutral-muted">
+        {{ $t('step2.counter', { count: selectedCount }, selectedCount) }}
+      </p>
 
       <div
         v-if="activeDay"

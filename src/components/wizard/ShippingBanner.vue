@@ -1,6 +1,6 @@
 <script setup>
-// Shown in Step 3 whenever any merchandise is in the order (AC-3.9, D30). The body copy
-// is reproduced verbatim from README.md §Step 3.4 — do not reword.
+// Shown in Step 3 whenever any merchandise is in the order (AC-3.9, D30). The `shipping.body`
+// locale string is reproduced verbatim from README.md §Step 3.4 — do not reword.
 </script>
 
 <template>
@@ -21,11 +21,8 @@
     </svg>
 
     <div class="flex min-w-0 flex-col gap-1">
-      <span class="text-subtitle2 text-neutral">Shipping Information</span>
-      <p class="text-md font-regular text-neutral">
-        Merchandise items will be shipped to your address one week before the conference. Please
-        ensure your shipping address in Step 1 is correct.
-      </p>
+      <span class="text-subtitle2 text-neutral">{{ $t('shipping.title') }}</span>
+      <p class="text-md font-regular text-neutral">{{ $t('shipping.body') }}</p>
     </div>
   </div>
 </template>

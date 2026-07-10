@@ -1,14 +1,18 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { fetchEvent, fetchSessions, fetchAddons, submitRegistration } from '../data/facade.js';
 import { provideRegistration, STEPS } from '../composables/useRegistration.js';
 import { provideValidation } from '../composables/useValidation.js';
 import WizardStepper from '../components/wizard/WizardStepper.vue';
+import LanguageSwitcher from '../components/wizard/LanguageSwitcher.vue';
 import StepAttendee from '../components/wizard/StepAttendee.vue';
 import StepSessions from '../components/wizard/StepSessions.vue';
 import StepAddons from '../components/wizard/StepAddons.vue';
 import StepReview from '../components/wizard/StepReview.vue';
 import SuccessScreen from '../components/wizard/SuccessScreen.vue';
+
+const { t } = useI18n({ useScope: 'global' });
 
 // Single wizard store provided at the root; steps inject it (D2). Validation is provided over the
 // same store (D36) so the submit button, the Step-4 review, and the Step-1 form share one error map.
@@ -64,12 +68,16 @@ const selectedTicketName = computed(
   () => ticketTypes.value.find((t) => t.id === ticketId.value)?.name ?? ''
 );
 
-const currentStepMeta = computed(() => STEPS[currentStep.value]);
+// Steps carry only a stable `key`; their display labels are translated live (D45), so the
+// stepper + the sr-only landmark heading re-render on a locale switch.
+const localizedSteps = computed(() =>
+  STEPS.map((s) => ({ key: s.key, label: t(`steps.${s.key}`) }))
+);
+const currentStepMeta = computed(() => localizedSteps.value[currentStep.value]);
 
-// UI copy stays inline until it moves behind i18n in Phase 4 (D14).
-const NEXT_LABELS = ['Next: Session Selection', 'Next: Add-ons', 'Next: Review'];
+const NEXT_LABEL_KEYS = ['footer.nextSessions', 'footer.nextAddons', 'footer.nextReview'];
 const primaryLabel = computed(() =>
-  isLastStep.value ? 'Submit Registration' : NEXT_LABELS[currentStep.value]
+  isLastStep.value ? t('footer.submit') : t(NEXT_LABEL_KEYS[currentStep.value])
 );
 
 const primaryClass = computed(() =>
@@ -163,7 +171,8 @@ function onBackToHome() {
           <path transform="translate(0 125.207)" d="M125.01 0H0V125.201H125.01V0Z" />
         </svg>
       </div>
-      <span class="text-h4 text-neutral">{{ eventName || 'Event Registration' }}</span>
+      <span class="text-h4 text-neutral">{{ eventName || $t('app.title') }}</span>
+      <LanguageSwitcher class="ml-auto" />
     </header>
 
     <SuccessScreen
@@ -181,7 +190,7 @@ function onBackToHome() {
         class="border-x-0 border-b border-t-0 border-solid divider-default px-4 py-6 tablet:px-8 desktop:px-30"
       >
         <WizardStepper
-          :steps="STEPS"
+          :steps="localizedSteps"
           :current="currentStep"
           :error-keys="errorStepsShown"
           @select="goToStep"
@@ -210,7 +219,7 @@ function onBackToHome() {
           class="flex h-10 min-w-[72px] cursor-pointer items-center justify-center rounded-[10px] border-0 bg-neutral-muted-rest px-4 text-subtitle2 text-neutral-muted transition-colors hover:bg-neutral-muted-hover active:bg-neutral-muted-active"
           @click="prev"
         >
-          Back
+          {{ $t('footer.back') }}
         </button>
         <button
           type="button"

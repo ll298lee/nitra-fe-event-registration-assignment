@@ -13,12 +13,12 @@ import { reactive, ref, computed, provide, inject } from 'vue';
 /** Injection key. */
 const REGISTRATION = Symbol('registration');
 
-/** The four wizard steps, in order. */
+/** The four wizard steps, in order. Display labels come from i18n (`steps.<key>`, D45). */
 export const STEPS = [
-  { key: 'attendee', label: 'Attendee Info' },
-  { key: 'sessions', label: 'Sessions' },
-  { key: 'addons', label: 'Add-ons' },
-  { key: 'review', label: 'Review' },
+  { key: 'attendee' },
+  { key: 'sessions' },
+  { key: 'addons' },
+  { key: 'review' },
 ];
 
 /**

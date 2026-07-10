@@ -40,7 +40,6 @@ const LABEL_TONE = {
 };
 
 const fillWidth = computed(() => `${Math.round(fraction.value * 100)}%`);
-const spotsLabel = computed(() => (full.value ? 'Sold Out' : `${remaining.value} spots left`));
 
 const DROP_SHADOW = '0px_4px_16px_0px_rgba(0,0,0,0.08),0px_1px_3px_0px_rgba(0,0,0,0.04)';
 const rootClass = computed(() => {
@@ -123,7 +122,7 @@ function onToggle() {
       class="text-[11px] leading-[14px]"
       :class="[LABEL_TONE[tone], full ? 'font-semibold' : 'font-medium']"
     >
-      {{ spotsLabel }}
+      {{ full ? $t('session.soldOut') : $t('session.spotsLeft', { n: remaining }) }}
     </span>
   </button>
 </template>

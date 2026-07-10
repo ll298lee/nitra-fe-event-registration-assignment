@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { fetchEvent, fetchSessions, fetchAddons } from '../../data/facade.js';
 import { useRegistration } from '../../composables/useRegistration.js';
 import { useValidation } from '../../composables/useValidation.js';
@@ -26,6 +27,7 @@ const {
 } = useRegistration();
 
 const { submitted, errors, errorSummary } = useValidation();
+const { t } = useI18n({ useScope: 'global' });
 
 const ticketTypes = ref([]);
 const sessions = ref([]);
@@ -53,8 +55,6 @@ const addonById = computed(() => new Map(addons.value.map((a) => [a.id, a])));
 // card's formatCurrency — do not collapse the two (D35).
 const dollars = (price) => `$${price}`;
 const EM_DASH = '—';
-const REQUIRED = '— (required)';
-const REQUIRED_MERCH = '— (required for merchandise)';
 
 const selectedTicket = computed(
   () => ticketTypes.value.find((t) => t.id === ticketId.value) ?? null
@@ -66,23 +66,26 @@ const selectedTicket = computed(
 function attendeeRowError(key, value) {
   if (!submitted.value || !errors.value.attendee[key]) return undefined;
   if (!value || value === EM_DASH) {
-    return key === 'shippingAddress' ? REQUIRED_MERCH : REQUIRED;
+    return key === 'shippingAddress' ? t('step4.requiredMerch') : t('step4.required');
   }
   return value;
 }
 
 const attendeeRows = computed(() => {
   const rows = [
-    { label: 'Name', key: 'fullName', value: attendee.fullName || EM_DASH },
-    { label: 'Email', key: 'email', value: attendee.email || EM_DASH },
-    { label: 'Phone', key: 'phone', value: attendee.phone || EM_DASH },
-    { label: 'Company', key: 'company', value: attendee.company || EM_DASH },
-    { label: 'Job Title', key: 'jobTitle', value: attendee.jobTitle || EM_DASH },
+    { label: t('step4.rows.name'), key: 'fullName', value: attendee.fullName || EM_DASH },
+    { label: t('step4.rows.email'), key: 'email', value: attendee.email || EM_DASH },
+    { label: t('step4.rows.phone'), key: 'phone', value: attendee.phone || EM_DASH },
+    { label: t('step4.rows.company'), key: 'company', value: attendee.company || EM_DASH },
+    { label: t('step4.rows.jobTitle'), key: 'jobTitle', value: attendee.jobTitle || EM_DASH },
     {
-      label: 'Ticket Type',
+      label: t('step4.rows.ticketType'),
       key: 'ticketId',
       value: selectedTicket.value
-        ? `${selectedTicket.value.name} (${dollars(selectedTicket.value.price)})`
+        ? t('step4.priceParens', {
+            name: selectedTicket.value.name,
+            price: dollars(selectedTicket.value.price),
+          })
         : EM_DASH,
     },
   ];
@@ -90,7 +93,7 @@ const attendeeRows = computed(() => {
   // failed submit — when it is required-but-missing so its error is visible; otherwise omit it (D35g).
   if (attendee.shippingAddress || (submitted.value && errors.value.attendee.shippingAddress)) {
     rows.push({
-      label: 'Shipping Address',
+      label: t('step4.rows.shippingAddress'),
       key: 'shippingAddress',
       value: attendee.shippingAddress || EM_DASH,
     });
@@ -108,18 +111,29 @@ const addonRows = computed(() => {
   const rows = [];
   for (const id of selectedWorkshopIds.value) {
     const a = addonById.value.get(id);
-    if (a) rows.push({ label: 'Workshop', value: `${a.name} (${dollars(a.price)})` });
+    if (a)
+      rows.push({
+        label: t('step4.addonLabels.workshop'),
+        value: t('step4.priceParens', { name: a.name, price: dollars(a.price) }),
+      });
   }
   for (const id of selectedMealIds.value) {
     const a = addonById.value.get(id);
-    if (a) rows.push({ label: 'Meal', value: `${a.name} (${dollars(a.price)})` });
+    if (a)
+      rows.push({
+        label: t('step4.addonLabels.meal'),
+        value: t('step4.priceParens', { name: a.name, price: dollars(a.price) }),
+      });
   }
   for (const [id, sel] of Object.entries(merchSelections)) {
     const a = addonById.value.get(id);
     if (!a || (sel?.quantity ?? 0) < 1) continue;
     const size = sel.size ? `, ${sel.size}` : '';
     const qty = sel.quantity > 1 ? ` × ${sel.quantity}` : '';
-    rows.push({ label: 'Merchandise', value: `${a.name}${size}${qty} (${dollars(a.price)})` });
+    rows.push({
+      label: t('step4.addonLabels.merchandise'),
+      value: t('step4.priceParens', { name: `${a.name}${size}${qty}`, price: dollars(a.price) }),
+    });
   }
   return rows;
 });
@@ -148,30 +162,30 @@ const addonErrors = computed(() => (submitted.value ? errors.value.addons : []))
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <h2 class="text-h3 text-neutral">Review Your Registration</h2>
+      <h2 class="text-h3 text-neutral">{{ $t('step4.heading') }}</h2>
 
       <ReviewSection
-        title="Attendee Information"
-        edit-label="Edit → Step 1"
+        :title="$t('step4.sections.attendee')"
+        :edit-label="$t('step4.editStep', { n: 1 })"
         :rows="attendeeRows"
         @edit="goToStep(0)"
       />
 
       <ReviewSection
-        title="Selected Sessions"
-        edit-label="Edit → Step 2"
+        :title="$t('step4.sections.sessions')"
+        :edit-label="$t('step4.editStep', { n: 2 })"
         :rows="sessionRows"
         :errors="sessionErrors"
-        empty-message="No sessions selected."
+        :empty-message="$t('step4.empty.sessions')"
         @edit="goToStep(1)"
       />
 
       <ReviewSection
-        title="Add-ons"
-        edit-label="Edit → Step 3"
+        :title="$t('step4.sections.addons')"
+        :edit-label="$t('step4.editStep', { n: 3 })"
         :rows="addonRows"
         :errors="addonErrors"
-        empty-message="No add-ons selected."
+        :empty-message="$t('step4.empty.addons')"
         @edit="goToStep(2)"
       />
 
