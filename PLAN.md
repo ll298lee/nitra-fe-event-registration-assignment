@@ -858,3 +858,17 @@ Key points:
 192 tests green, `yarn check` clean; verified in-browser @1440px — Step-3 workshop `$149`, meal
 `$45`/`$89`, ticket line `$599` (all whole, no cents); the VIP order summary keeps `-$14.90` and
 `$733.10`.
+
+## docs(plan): sync Phase-3 checklist + review log (no code change)
+
+Reconciled two bookkeeping-drift spots in `IMPLEMENTATION_PLAN.md` — no code, tests, or decisions
+changed (still 192 green).
+
+- **Ticked the `docs(plan)` Phase-3 task** (§6). Its substance — the pricing decisions (D26, D42)
+  and validation decisions (D34, D36–D40) — was already recorded in §3, but landed **inline with
+  each feature PR** (per `CLAUDE.md` §2: journal/plan updates ship in the same commit as the change,
+  never a trailing docs commit). So no standalone `docs(plan)` commit ever existed to tick the box;
+  it was left unchecked purely as an oversight. Annotated the box with the PR provenance rather than
+  silently checking it.
+- **Added the missing PR #19 row** to the §9 review log (meal packages + whole-dollar-price fix,
+  merged `9a5f90c`, carrying D41/D42). The log had stopped at #18 while #19 was already merged.
