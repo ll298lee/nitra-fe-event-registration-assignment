@@ -36,4 +36,14 @@ describe('FormField — focus & error border states (D38)', () => {
     expect(w.get('label').text()).toContain('(Optional)');
     expect(w.get('label').classes()).toContain('text-neutral');
   });
+
+  // D39 — a required field appends "*" and darkens its resting border (even without focus).
+  it('shows a required field with an asterisk and a darker resting border', () => {
+    const w = mountField({ required: true, label: 'Shipping Address' });
+    expect(w.get('label').text()).toContain('Shipping Address *');
+    const cls = w.get('input').classes();
+    expect(cls).toContain('border-neutral-emphasis');
+    expect(cls).not.toContain('border-neutral-muted');
+    expect(cls).not.toContain('focus:border-neutral-emphasis'); // already dark at rest
+  });
 });

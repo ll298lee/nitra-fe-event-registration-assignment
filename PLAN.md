@@ -735,3 +735,20 @@ overriding the check + the gray connector. `StepReview.spec.js` — the banner a
 submit. `IndexPage.spec.js` — end-to-end: a failed submit marks the stepper, disables Submit, shows
 the banner; and Submit re-enables once the form is fixed. `FormField.spec.js` (new) — rest/focus/error
 border classes (darken-not-thicken, red-even-when-focused, red error label).
+
+## fix(step-1): shipping required state — darker border + "\*" label
+
+User correction of a D38 interpretation call. When merchandise is selected (Shipping Address becomes
+required), its input border **darkens at rest** (`border-neutral-emphasis`, not only on focus) and the
+label becomes **"Shipping Address \*"** — the "MERCHANDISE SELECTED" state of frame `1203:587`. D38 had
+read that darker-gray column as a focus-only darken and deferred the asterisk; the user confirmed it is
+the required state, recorded as **D39** (supersedes those two D38 flags). Added a `FormField`
+`required` prop (darker resting border + an appended " \*"); `StepAttendee` passes
+`:required="shippingRequired"`. Only the conditionally-required shipping field gets this — the
+always-required fields stay light + asterisk-free per `1069:968`, so the "\*" + darken are a
+requirement-just-changed transition cue, not a general required style. 179 tests green, `yarn check`
+clean; verified in-browser (label "Shipping Address \*", resting border #5c6970 with no focus).
+
+Tests: `FormField.spec.js` — a required field shows the "\*" and a darker resting border (no focus).
+`StepAttendee.spec.js` — the shipping label toggles between "(Optional)" and "Shipping Address \*" as
+merch is added/removed.

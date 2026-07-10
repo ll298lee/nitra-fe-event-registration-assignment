@@ -158,10 +158,13 @@ describe('StepAttendee (Step 1 — submit-time validation, D36)', () => {
 
     store.merchSelections.merch1 = { size: 'M', quantity: 1 };
     await nextTick();
+    // Required now: "(Optional)" drops and the "*" appears (D39).
     expect(shippingLabel(wrapper).text()).not.toContain('(Optional)');
+    expect(shippingLabel(wrapper).text()).toContain('Shipping Address *');
 
     delete store.merchSelections.merch1;
     await nextTick();
     expect(shippingLabel(wrapper).text()).toContain('(Optional)');
+    expect(shippingLabel(wrapper).text()).not.toContain('Shipping Address *');
   });
 });

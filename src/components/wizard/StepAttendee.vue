@@ -151,6 +151,7 @@ function onKeydown(e) {
           v-model="attendee.shippingAddress"
           label="Shipping Address"
           :optional="!shippingRequired"
+          :required="shippingRequired"
           placeholder="Enter your shipping address"
           autocomplete="street-address"
           :error="attendeeError('shippingAddress')"
