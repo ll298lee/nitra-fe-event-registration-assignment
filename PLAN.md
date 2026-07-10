@@ -434,3 +434,12 @@ Recorded as **D19**.
 box-shadow selection ring) — not style narration, but guards against a well-meaning
 "simplify back to `v-if` / a border" refactor that would reintroduce the selection-time
 layout shift the review explicitly asked to fix.
+
+## fix(attendee): pin the Selected badge to the card bottom-left
+
+Per reviewer request, the "✓ Selected" badge now sits in the **same bottom-left corner on
+every ticket card** (`mt-auto`) instead of flowing 12px below each card's last perk. Since
+the cards are equal-height (grid), this lands the badge at a consistent 20px-from-bottom-left
+inset on all three; height stays 288px and stable across selection. Recorded as **D22** —
+a deliberate override of the earlier Figma reading (D20), where the badge tracked each card's
+perk count.

@@ -51,10 +51,11 @@ defineEmits(['select']);
       </li>
     </ul>
 
-    <!-- Always rendered but toggled with `invisible` (not v-if) so selecting a ticket
-         never changes the card/row height — reserving its space keeps the layout stable. -->
+    <!-- Pinned to the card's bottom-left (mt-auto) so it sits in the same spot on every
+         card. Always rendered and toggled with `invisible` (not v-if) so selecting a ticket
+         never changes the card/row height. -->
     <span
-      class="inline-flex w-fit items-center rounded-full bg-success-bold-rest px-[9px] py-[3px] text-[11px] font-medium leading-[14px] text-inverse"
+      class="mt-auto inline-flex w-fit items-center rounded-full bg-success-bold-rest px-[9px] py-[3px] text-[11px] font-medium leading-[14px] text-inverse"
       :class="{ invisible: !selected }"
     >
       ✓ Selected
