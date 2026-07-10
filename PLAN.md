@@ -656,3 +656,42 @@ D35e); the conditional Shipping Address row present/absent (D35g); itemized pric
 discount + Grand Total + no-subtotal (AC-4.2); non-VIP no discount; Edit → `goToStep` with state
 preserved (AC-4.3); empty states incl. the pricing card's own empty state and the em-dash ticket
 fallback. `datetime.test.js` — `formatDateTime` wall-clock (no viewer-offset shift).
+
+## feat(validation): step 4 submit-time validation wiring
+
+Step 4 PR 3 (of ~4, D34/D36). Wired the pure `validation.js` (PR #15) into the UI: a new
+`useValidation` composable (provide/inject at the wizard root, like `useRegistration`) exposes a
+`submitted` flag + a **live** `validateAll` error map + `attemptSubmit()`. The Step-4 "Submit
+Registration" button now runs unified validation; on failure the Review page marks the failing
+sections and Step-1 surfaces its field errors, all clearing live once fixed. New
+`useValidation.js` + tests; `ReviewSection`/`StepReview`/`StepAttendee`/`IndexPage` wired. Measured
+error-state parity vs frame `1076:936` via `agent-browser`. Recorded as **D36**. 168 tests green,
+`yarn check` clean.
+
+Judgment calls (flagged for review):
+
+- **"Reward early, punish late" via a single `submitted` flag (D7/D36b):** nothing validates before
+  the first submit; after a failed submit every currently-invalid field shows its error and clears
+  live as it becomes valid. No separate per-field "touched" map — an invalid field surfaces its
+  error post-submit whether or not it was touched, so the live recompute subsumes touched-tracking.
+- **Review error display from frame `1076:936`:** an errored section card turns its border and
+  heading danger-red; a failing attendee field shows "— (required)" / "— (required for merchandise)"
+  (or the entered value in red when present-but-invalid). **Spec-gap fill (D36d):** the frame shows
+  only the Attendee card, so session↔session / workshop↔session conflicts are rendered as red rows on
+  the Sessions / Add-ons cards by analogy.
+- **Error navigation = the red section cards + the existing Edit links** (no invented stepper error
+  badge — Figma has none; a red card maps 1:1 to a step + its Edit link, satisfying README §4.5).
+- **PR-boundary refinement (D36h):** this PR is the invalid path only — a **valid** submit is a
+  guarded no-op placeholder; the async `submitRegistration` + pending + **double-submit guard** +
+  terminal success screen move together into the next PR (the guard is meaningless without the async
+  call, so it left D34's PR-3 grouping).
+- **Shipping "(Optional)" label drops** once merch is selected (required, AC-1.6) and reverts when
+  merch is removed (non-sticky, AC-1.7).
+
+Tests: `useValidation.test.js` — no pre-submit errors, reveal-on-fail, live-clear, valid-pass,
+reset, session/workshop conflict attribution + wizard order, shipping-conditional (AC-V-5, AC-4.4/4.6/4.9,
+AC-1.6/1.7). `StepReview.spec.js` — red Attendee card + "— (required)" markers, present-but-invalid
+value shown flagged, session/stale-workshop conflict rows (kept, D10), merch-shipping requirement,
+live revert of a section's error state, and a valid submit leaving every section clean.
+`StepAttendee.spec.js` — field + ticket errors after failed submit, live-clear, shipping "(Optional)"
+toggle.

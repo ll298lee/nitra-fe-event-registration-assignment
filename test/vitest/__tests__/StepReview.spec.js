@@ -3,8 +3,15 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { defineComponent, h, nextTick } from 'vue';
 import StepReview from 'src/components/wizard/StepReview.vue';
 import { provideRegistration } from 'src/composables/useRegistration.js';
+import { provideValidation } from 'src/composables/useValidation.js';
+import { normalizeSessions, normalizeAddons } from 'src/data/normalize.js';
+import { sessions as rawSessions } from 'src/mocks/sessions.js';
+import { addons as rawAddons } from 'src/mocks/addons.js';
 
 installQuasarPlugin();
+
+const sessionsData = normalizeSessions(rawSessions);
+const addonsData = normalizeAddons(rawAddons);
 
 // Resolve the async facade synchronously with the real, normalized mocks so the review renders
 // against true ticket/session/add-on data (names, prices, times).
@@ -21,9 +28,11 @@ vi.mock('src/data/facade.js', async () => {
 });
 
 let store;
+let validation;
 const Harness = defineComponent({
   setup() {
     store = provideRegistration();
+    validation = provideValidation(store, { sessions: sessionsData, addons: addonsData });
     return () => h(StepReview);
   },
 });
@@ -216,5 +225,117 @@ describe('StepReview (Step 4 — Review & Submit: summary + itemized pricing, D3
       .findAll('.justify-between')
       .find((r) => r.element.children.length === 2 && r.text().includes('Ticket Type'));
     expect(ticketRow.text()).toContain('—');
+  });
+});
+
+describe('StepReview (Step 4 — submit-time error display, D36)', () => {
+  const sectionByTitle = (w, title) =>
+    w.findAll('section').find((s) => s.find('h3').exists() && s.find('h3').text() === title);
+
+  // AC-V-5 — nothing is flagged before a submit is attempted.
+  it('shows no error markers before submit', async () => {
+    const w = await mountStep();
+    expect(w.text()).not.toContain('(required)');
+  });
+
+  // AC-4.4/4.5 — a failed submit turns the Attendee card red and marks each missing field.
+  it('flags missing attendee fields after a failed submit', async () => {
+    const w = await mountStep();
+    expect(validation.attemptSubmit()).toBe(false);
+    await nextTick();
+
+    const attendee = sectionByTitle(w, 'Attendee Information');
+    expect(attendee.find('h3').classes()).toContain('text-danger');
+    expect(attendee.text()).toContain('— (required)'); // missing fields + Ticket Type
+  });
+
+  // AC-4.9 — a session↔session conflict is surfaced on the Sessions card.
+  it('surfaces a session conflict on the Sessions card', async () => {
+    const w = await mountStep();
+    store.selectedSessionIds.value = ['s4', 's5']; // 13:00–14:30 vs 13:30–15:00 overlap
+    validation.attemptSubmit();
+    await nextTick();
+
+    const sessionsSection = sectionByTitle(w, 'Selected Sessions');
+    expect(sessionsSection.find('h3').classes()).toContain('text-danger');
+    expect(sessionsSection.text()).toContain('overlaps with');
+  });
+
+  // AC-4.6 / D10 — a stale workshop↔session conflict is surfaced on the Add-ons card, kept.
+  it('surfaces a stale workshop conflict on the Add-ons card without removing it', async () => {
+    const w = await mountStep();
+    store.selectedWorkshopIds.value = ['ws1'];
+    store.selectedSessionIds.value = ['s11']; // Accessibility Deep Dive overlaps ws1
+    validation.attemptSubmit();
+    await nextTick();
+
+    const addonsSection = sectionByTitle(w, 'Add-ons');
+    expect(addonsSection.find('h3').classes()).toContain('text-danger');
+    expect(addonsSection.text()).toContain('Accessibility Deep Dive');
+    expect(store.selectedWorkshopIds.value).toEqual(['ws1']); // not auto-removed (D10)
+  });
+
+  // AC-1.6 — shipping shows a merch-specific required marker when merch is selected.
+  it('shows the merch-specific shipping requirement after submit', async () => {
+    const w = await mountStep();
+    store.merchSelections.merch1 = { size: 'M', quantity: 1 };
+    validation.attemptSubmit();
+    await nextTick();
+
+    const attendee = sectionByTitle(w, 'Attendee Information');
+    expect(attendee.text()).toContain('— (required for merchandise)');
+  });
+
+  // D36c — a present-but-invalid field shows its entered value in place (flagged), not a
+  // "— (required)" marker, distinguishing that branch of attendeeRowError.
+  it('shows a present-but-invalid attendee value in place, flagged', async () => {
+    const w = await mountStep();
+    store.attendee.email = 'not-an-email';
+    validation.attemptSubmit();
+    await nextTick();
+
+    const attendee = sectionByTitle(w, 'Attendee Information');
+    const emailRow = attendee
+      .findAll('.justify-between')
+      .find((r) => r.element.children.length === 2 && r.text().includes('Email'));
+    expect(emailRow.text()).toContain('not-an-email'); // entered value, not "— (required)"
+    expect(emailRow.findAll('span')[1].classes()).toContain('text-danger');
+  });
+
+  // AC-V-5 / D7 — the "reward early" half at the review surface: a section's error state reverts
+  // live once its fields are fixed, with no second submit.
+  it('reverts a section error state live once its fields are fixed', async () => {
+    const w = await mountStep();
+    validation.attemptSubmit();
+    await nextTick();
+    expect(sectionByTitle(w, 'Attendee Information').find('h3').classes()).toContain('text-danger');
+    expect(sectionByTitle(w, 'Attendee Information').text()).toContain('— (required)');
+
+    Object.assign(store.attendee, {
+      fullName: 'Ada Lovelace',
+      email: 'ada@example.com',
+      phone: '4155550100',
+      company: 'Analytical Engines',
+      jobTitle: 'Mathematician',
+    });
+    store.ticketId.value = 'vip';
+    await nextTick();
+
+    const attendee = sectionByTitle(w, 'Attendee Information');
+    expect(attendee.find('h3').classes()).not.toContain('text-danger');
+    expect(attendee.text()).not.toContain('(required)');
+  });
+
+  // AC-4.4 — a valid submit at the component layer leaves every section clean.
+  it('keeps every section clean after a valid submit', async () => {
+    const w = await mountStep();
+    await seedFullCart(); // vip + s1/s4 + ws1 — no conflicts, valid attendee
+    expect(validation.attemptSubmit()).toBe(true);
+    await nextTick();
+
+    w.findAll('section').forEach((s) => {
+      expect(s.find('h3').classes()).not.toContain('text-danger');
+    });
+    expect(w.text()).not.toContain('(required)');
   });
 });

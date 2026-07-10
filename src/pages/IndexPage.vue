@@ -1,20 +1,35 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { fetchEvent } from '../data/facade.js';
+import { fetchEvent, fetchSessions, fetchAddons } from '../data/facade.js';
 import { provideRegistration, STEPS } from '../composables/useRegistration.js';
+import { provideValidation } from '../composables/useValidation.js';
 import WizardStepper from '../components/wizard/WizardStepper.vue';
 import StepAttendee from '../components/wizard/StepAttendee.vue';
 import StepSessions from '../components/wizard/StepSessions.vue';
 import StepAddons from '../components/wizard/StepAddons.vue';
 import StepReview from '../components/wizard/StepReview.vue';
 
-// Single wizard store provided at the root; steps inject it (D2).
-const { currentStep, goToStep, next, prev, isFirstStep, isLastStep } = provideRegistration();
+// Single wizard store provided at the root; steps inject it (D2). Validation is provided over the
+// same store (D36) so the submit button, the Step-4 review, and the Step-1 form share one error map.
+const registration = provideRegistration();
+const { currentStep, goToStep, next, prev, isFirstStep, isLastStep } = registration;
 
+// The root loads the event name (header) plus the sessions + add-ons that submit-time conflict
+// validation needs to resolve selected ids to their time slots (D36).
 const eventName = ref('');
+const sessions = ref([]);
+const addons = ref([]);
+const { attemptSubmit } = provideValidation(registration, { sessions, addons });
+
 onMounted(async () => {
-  const event = await fetchEvent();
+  const [event, sessionList, addonList] = await Promise.all([
+    fetchEvent(),
+    fetchSessions(),
+    fetchAddons(),
+  ]);
   eventName.value = event.name;
+  sessions.value = sessionList;
+  addons.value = addonList;
 });
 
 const currentStepMeta = computed(() => STEPS[currentStep.value]);
@@ -32,8 +47,13 @@ const primaryClass = computed(() =>
 );
 
 function onPrimary() {
-  // The Step 4 submit flow is wired in a later PR; until then the last step is a no-op.
-  if (!isLastStep.value) next();
+  if (!isLastStep.value) {
+    next();
+    return;
+  }
+  // Unified submit-time validation (README §4.4): a failed submit reveals the per-step errors on
+  // the review. The valid path (async submit + success screen) lands in the next PR (D36h).
+  attemptSubmit();
 }
 </script>
 

@@ -1,14 +1,23 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { fetchEvent } from '../../data/facade.js';
 import { useRegistration } from '../../composables/useRegistration.js';
+import { useValidation } from '../../composables/useValidation.js';
+import { hasMerchSelected } from '../../logic/validation.js';
 import TicketCard from './TicketCard.vue';
 import FormField from './FormField.vue';
 
-// Step 1 — Attendee Info. Ticket type + attendee form. Validation is deferred to the
-// Step 4 submit (README §Step 1, AC-1.5), so nothing validates on this step.
+// Step 1 — Attendee Info. Ticket type + attendee form. Validation is deferred to the Step 4
+// submit (README §Step 1, AC-1.5): nothing shows before the first submit. After a failed submit
+// the shared useValidation surfaces each field's error live ("reward early, punish late", D7/D36).
 
-const { attendee, ticketId } = useRegistration();
+const { attendee, ticketId, merchSelections } = useRegistration();
+const { attendeeError } = useValidation();
+
+// Shipping Address is required once any merch is selected (AC-1.6/1.7) — drop the "(Optional)"
+// label in that case, and surface its error like the other fields.
+const shippingRequired = computed(() => hasMerchSelected(merchSelections));
+const ticketError = computed(() => attendeeError('ticketId'));
 
 const ticketTypes = ref([]);
 const loadingEvent = ref(true);
@@ -82,6 +91,8 @@ function onKeydown(e) {
           @select="selectTicket"
         />
       </div>
+
+      <p v-if="ticketError" class="text-sm text-danger">{{ ticketError }}</p>
     </section>
 
     <section class="flex flex-col gap-8">
@@ -95,6 +106,7 @@ function onKeydown(e) {
             label="Full Name"
             placeholder="Enter your full name"
             autocomplete="name"
+            :error="attendeeError('fullName')"
           />
           <FormField
             v-model="attendee.email"
@@ -103,6 +115,7 @@ function onKeydown(e) {
             type="email"
             placeholder="Enter your email address"
             autocomplete="email"
+            :error="attendeeError('email')"
           />
         </div>
 
@@ -114,6 +127,7 @@ function onKeydown(e) {
             type="tel"
             placeholder="Enter your phone number"
             autocomplete="tel"
+            :error="attendeeError('phone')"
           />
           <FormField
             v-model="attendee.company"
@@ -121,6 +135,7 @@ function onKeydown(e) {
             label="Company"
             placeholder="Enter your company name"
             autocomplete="organization"
+            :error="attendeeError('company')"
           />
         </div>
 
@@ -129,14 +144,16 @@ function onKeydown(e) {
           label="Job Title"
           placeholder="Enter your job title"
           autocomplete="organization-title"
+          :error="attendeeError('jobTitle')"
         />
 
         <FormField
           v-model="attendee.shippingAddress"
           label="Shipping Address"
-          :optional="true"
+          :optional="!shippingRequired"
           placeholder="Enter your shipping address"
           autocomplete="street-address"
+          :error="attendeeError('shippingAddress')"
         />
       </div>
     </section>
