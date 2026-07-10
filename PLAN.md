@@ -926,3 +926,19 @@ guard disables the motion for users who ask for less.
   clashes.
 - **Verified:** navigation still works through the `<Transition>` wrapper (reached Add-ons/Review),
   the transition CSS is present, and there is no Vue "single child" warning. 195 tests green.
+
+## feat(ux): stepper navigation feel — animated states + keyboard focus ring
+
+Fourth UX-polish commit (D43d — a user-expansion theme). The stepper is the primary navigation
+control, so its state changes and keyboard affordance were polished.
+
+- **Smooth state transitions.** Added `transition-colors` to the step circle, label, and connector,
+  so completing/entering a step animates (circle fills teal, connector fills, check appears, label
+  darkens) over 150 ms instead of snapping.
+- **Keyboard focus ring.** The step buttons had a hover affordance (`hover:opacity-70`) but no
+  visible keyboard-focus indicator. Added a `group-focus-visible` box-shadow ring on the circle —
+  a 2 px surface gap + a 2 px `--border-brand-emphasis` teal ring — with `focus-visible:outline-none`
+  on the button; it appears only on keyboard focus, not mouse click.
+- **Verified in-browser** (`agent-browser`): circle/connector `transition-duration` = 0.15 s;
+  Tab focuses a step button (`:focus-visible` matches) and the circle's computed box-shadow shows
+  the white-gap + teal ring (`rgb(255,255,255) … 2px, rgb(38,77,79) … 4px`).
