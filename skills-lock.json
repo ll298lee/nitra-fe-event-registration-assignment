@@ -7,6 +7,12 @@
       "skillPath": "skills/agent-browser/SKILL.md",
       "computedHash": "ecc7641aea05f85ca3b11e7759d32aaf52fe05946ab4b63739c7bf78a41237a2"
     },
+    "figma-design-to-code": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-design-to-code/SKILL.md",
+      "computedHash": "082007ea83ebe25d4bc32d7e3e4c4d1422271a7033195fb0bc26266dd1e1931c"
+    },
     "quasar-skilld": {
       "source": "harlan-zw/vue-ecosystem-skills",
       "sourceType": "github",
