@@ -912,3 +912,17 @@ of a spinner and there is no jump when the data resolves.
   content rendered. 195 tests green (+3).
 - **Verified visually** (`agent-browser`, latency temporarily raised then reverted): Step 1 shows 15
   skeleton bars shaped like the ticket cards, clearing to the real cards on resolve.
+
+## feat(ux): fade transition on wizard step change
+
+Third UX-polish commit (D43c). Wrapped the `v-if`/`v-else-if` step swap in `IndexPage`'s `<main>`
+in `<Transition name="step" mode="out-in">` — a 150 ms opacity + 4 px `translateY` fade replacing
+the hard cut, so moving between steps reads as a smooth cross-fade. A `prefers-reduced-motion`
+guard disables the motion for users who ask for less.
+
+- **Non-scoped `<style>` (deliberate).** Vue applies the `step-*` transition classes to the child
+  step's **root** element, which carries the _child component's_ scope attribute — a `scoped` rule
+  in `IndexPage` would not match it. So the classes are global, with unique `step-*` names to avoid
+  clashes.
+- **Verified:** navigation still works through the `<Transition>` wrapper (reached Add-ons/Review),
+  the transition CSS is present, and there is no Vue "single child" warning. 195 tests green.

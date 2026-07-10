@@ -173,10 +173,12 @@ function onBackToHome() {
         <!-- Each step renders its own visible title; this h1 stays screen-reader-only as the
              page's landmark heading (the stepper label). -->
         <h1 class="sr-only">{{ currentStepMeta.label }}</h1>
-        <StepAttendee v-if="currentStep === 0" />
-        <StepSessions v-else-if="currentStep === 1" />
-        <StepAddons v-else-if="currentStep === 2" />
-        <StepReview v-else />
+        <Transition name="step" mode="out-in">
+          <StepAttendee v-if="currentStep === 0" />
+          <StepSessions v-else-if="currentStep === 1" />
+          <StepAddons v-else-if="currentStep === 2" />
+          <StepReview v-else />
+        </Transition>
       </main>
 
       <footer
@@ -205,3 +207,32 @@ function onBackToHome() {
     </template>
   </div>
 </template>
+
+<style>
+/* Non-scoped: Vue applies these classes to the child step's root element, which carries the
+   child component's scope attribute — scoped rules here would not match it. Names are unique. */
+.step-enter-active,
+.step-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.step-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.step-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-enter-active,
+  .step-leave-active {
+    transition: none;
+  }
+  .step-enter-from,
+  .step-leave-to {
+    transform: none;
+  }
+}
+</style>
