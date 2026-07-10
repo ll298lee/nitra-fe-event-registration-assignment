@@ -5,10 +5,12 @@
 // clickable, no validation gate; the parent owns the step change.
 //
 // Figma: circle 32px; current/completed = teal (bg-brand-emphasis-rest) with white
-// number / white 2px check; upcoming = gray[50] (bg-surface-l2) with a 0.4 number.
-// Label 14px (Figma 13px — no exact token; nearest on-scale is text-md/14, see §4),
+// 14px semibold number / white check; upcoming = gray[50] (bg-surface-l2) with a
+// 0.4 semibold number. The completed check is Figma's own 2px round-cap/round-join
+// stroked glyph (path M9 16.3667L13.9 21.5L23 10.5), not the Material `check`.
+// Label is 13px/leading-normal (no exact token — arbitrary text-[13px], see §4),
 // weight current=semibold / completed=medium / upcoming=regular; upcoming color 0.4.
-// Connector 2px: teal once the prior step is done, else gray[50].
+// Connector 2px with a 1px corner radius: teal once the prior step is done, else gray[50].
 
 const props = defineProps({
   /** @type {{ key?: string, label: string }[]} */
@@ -49,15 +51,29 @@ function connectorClass(i) {
           class="text-md flex h-8 w-8 items-center justify-center rounded-full font-semibold"
           :class="circleClass(i)"
         >
-          <q-icon v-if="i < current" name="check" size="16px" />
+          <svg
+            v-if="i < current"
+            viewBox="0 0 32 32"
+            class="h-8 w-8"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M9 16.3667L13.9 21.5L23 10.5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
           <span v-else>{{ i + 1 }}</span>
         </span>
-        <span class="text-md" :class="labelClass(i)">{{ step.label }}</span>
+        <span class="text-[13px] leading-[normal]" :class="labelClass(i)">{{ step.label }}</span>
       </button>
 
       <span
         v-if="i < steps.length - 1"
-        class="mx-4 h-0.5 flex-1 rounded-full"
+        class="mx-4 h-0.5 flex-1 rounded-[1px]"
         :class="connectorClass(i)"
         aria-hidden="true"
       />

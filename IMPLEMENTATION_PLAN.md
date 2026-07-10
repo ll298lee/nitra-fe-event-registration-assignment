@@ -115,15 +115,42 @@ Tests co-locate for pure logic (`src/**/*.test.js`); component tests under
   primary `bg-accent-emphasis-rest` (`#FB7429`). **Text-only labels — no icons** (Figma has no
   arrow/chevron on the footer buttons; an earlier chevron was removed as invented).
 - **Shell discrepancies (measured value → resolution, per §1.3/§4 — no silent rounding):**
-  (1) **stepper label 13px** → **`text-md` (14px)**, the nearest on-scale token (scale has 12/14,
-  no 13). (2) **Figma font-weights 680/600/500/400** → nearest token weights **630/610/570/485**
+  (1) **stepper label 13px** → **`text-[13px] leading-[normal]`** — exact arbitrary value. _(Corrected
+  in the 2026-07-10 Dev Mode re-audit; the earlier `text-md`/14px was a silent round-up, and
+  `leading-[normal]` matches Figma's CSS `line-height: normal` — **not** Tailwind's `leading-normal`,
+  which is 1.5.)_ (2) **Figma font-weights 680/600/500/400** → nearest token weights **630/610/570/485**
   (`font-bold`/`semibold`/`medium`/`regular`); only 610 matches exactly. (3) **button radius 10px**
   → `rounded-[10px]` (arbitrary; scale jumps 8→12), Submit's 12px = `rounded-xl`. (4) **native
   `<button>` for footer/stepper controls** (not `QBtn`) for exact height/radius/padding fidelity;
   `QBtn`'s min-height/padding fight the measured `40/48px`. Interactive states use the
-  `-rest/-hover/-active` token triples. (5) **Header logo glyph** approximated with a Quasar
-  `event` icon (no exported asset). (6) **Responsive** not in Figma (fixed 1440) — desktop insets
-  shipped; responsive is the Phase 4 task.
+  `-rest/-hover/-active` token triples. (5) **Header logo glyph** — **resolved:** the mark is the Figma
+  **"N Emblem — White"** component (node `1116:1005`, 3 white vectors) inlined as an SVG
+  (viewBox `500×250.408`, rendered 28×14, `currentColor` = white via `text-inverse`). The earlier
+  Quasar `event` calendar icon was an **invented glyph** and is removed. (6) **Responsive** not in
+  Figma (fixed 1440) — desktop insets shipped; responsive is the Phase 4 task.
+
+- **Dev Mode re-audit (2026-07-10) — shell re-verified against the official Dev Mode MCP** (the
+  earlier shell fidelity used the removed `figma-mcp-free` server; D18 switched to the local Dev Mode
+  server, so the shell was re-measured element-by-element and diffed vs. the code). Corrections landed
+  (all mapped to tokens, verified in-browser via `getComputedStyle` @ 1440px):
+  - **Completed-step check** = Figma's own 2px round-cap/round-join stroked glyph (path
+    `M9 16.3667L13.9 21.5L23 10.5`, 32-viewBox), inlined as SVG — replaces the Material `q-icon`
+    check (a different, filled glyph). Its co-located spec test now asserts the check **`svg`**.
+  - **Connector line radius** `rounded-full` → **`rounded-[1px]`** (Figma line rect `rx=1`).
+  - **Action-bar buttons** are hug-content with nested outer+inner padding → net **`px-4`** (md
+    Next/Back) / **`px-5`** (lg Submit), plus **`min-w-[72px]`** (md) / **`min-w-[88px]`** (Submit).
+    The prior `px-2`/`px-3` under-padded by ~8px/side (buttons rendered ~16px too narrow).
+  - **Submit label** `text-subtitle1` (16/20) → **`text-lg font-semibold`** (16/24/610) = Figma
+    `lg-label` (its 24px line-height, not subtitle1's 20px).
+  - **Step-1 Next copy** "Next: Sessions" → **"Next: Session Selection"** (verbatim). Step-2
+    "Next: Add-ons", Step-3 "Next: Review", "Submit Registration", and the four stepper labels
+    ("Attendee Info / Sessions / Add-ons / Review") already matched.
+  - **Phantom 3px band borders (visual bug fixed):** `border-solid` sets a style on **all four**
+    sides, but the project ships no Tailwind `border-width:0` reset, so the unset sides fell back to
+    the CSS default `medium` (3px) and rendered faint borders on the top/left/right of the header,
+    stepper band, and footer. Added `border-x-0`/`border-t-0`/`border-b-0` so each band shows only
+    its single 1px `divider-default`. (Same missing-reset root cause behind the earlier
+    "border needs explicit `border-solid`" gotcha.)
 - **Figma frames:** Step 1 `1069:968` · Step 2 `1072:912` · Step 3 `1149:565` · Step 4 `1074:897` ·
   **Success State `1075:903`** · review sub-frames incl. `Review – Attendee (Error)` `1076:936`
   (grounds the step-error-indicator design).
@@ -503,7 +530,9 @@ Per-PR record of the human `review` gate — one row per merged PR (a PR is the 
 sized to ~20 min of senior review; §2.6). "Approved/merged" is set only by a human — the
 agent never self-approves.
 
-| PR                                                                              | Theme / branch                                                                                                              | Reviewer  | Status                           |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
-| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests) | ll298lee  | **Merged** (2026-07-09)          |
-| #TBD                                                                            | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper        | _pending_ | **Open — awaiting human review** |
+| PR                                                                              | Theme / branch                                                                                                                                                       | Reviewer  | Status                           |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------- |
+| [#6](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/6) | `feat/foundation-pure-logic` — pure business-logic foundation (data facade, pricing, datetime, conflicts, capacity + tests)                                          | ll298lee  | **Merged** (2026-07-09)          |
+| [#7](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/7) | `feat/wizard-shell-state` — wizard shell (header/stepper/content/footer) + `useRegistration` store, free-nav stepper                                                 | ll298lee  | **Merged**                       |
+| [#8](https://github.com/ll298lee/nitra-fe-event-registration-assignment/pull/8) | `chore/figma-dev-mode-mcp` — switch Figma read to official Dev Mode MCP + `figma-design-to-code` skill (D18)                                                         | ll298lee  | **Merged**                       |
+| #TBD                                                                            | `fix/shell-devmode-reaudit` — shell re-verified against Dev Mode MCP: real N-emblem + stepper check SVGs, 13px labels, exact button padding/copy, phantom-border fix | _pending_ | **Open — awaiting human review** |
