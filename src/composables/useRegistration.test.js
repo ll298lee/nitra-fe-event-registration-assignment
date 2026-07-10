@@ -50,6 +50,38 @@ describe('createRegistration — state persistence (AC-N-2)', () => {
   });
 });
 
+describe('createRegistration — reset (D40, "Back to Home")', () => {
+  it('clears every selection and returns to Step 1', () => {
+    const r = createRegistration();
+    r.currentStep.value = 3;
+    r.attendee.fullName = 'Ada Lovelace';
+    r.attendee.email = 'ada@example.com';
+    r.attendee.shippingAddress = '1 Analytical Way';
+    r.ticketId.value = 'vip';
+    r.selectedSessionIds.value = ['s1', 's3'];
+    r.selectedWorkshopIds.value = ['ws1'];
+    r.selectedMealIds.value = ['meal1'];
+    r.merchSelections.merch1 = { size: 'M', quantity: 2 };
+
+    r.reset();
+
+    expect(r.currentStep.value).toBe(0);
+    expect(r.attendee).toEqual({
+      fullName: '',
+      email: '',
+      phone: '',
+      company: '',
+      jobTitle: '',
+      shippingAddress: '',
+    });
+    expect(r.ticketId.value).toBeNull();
+    expect(r.selectedSessionIds.value).toEqual([]);
+    expect(r.selectedWorkshopIds.value).toEqual([]);
+    expect(r.selectedMealIds.value).toEqual([]);
+    expect(r.merchSelections).toEqual({});
+  });
+});
+
 describe('provide/inject wiring (AC-N-3)', () => {
   it('injects one shared store; a mutation in one consumer is seen by another', () => {
     const captured = [];

@@ -25,18 +25,15 @@ export const STEPS = [
  * Build a fresh wizard store. Exported for unit tests; app code goes through
  * `provideRegistration` / `useRegistration`.
  */
+function emptyAttendee() {
+  return { fullName: '', email: '', phone: '', company: '', jobTitle: '', shippingAddress: '' };
+}
+
 export function createRegistration() {
   const currentStep = ref(0);
 
   // Step 1 — attendee details + chosen ticket.
-  const attendee = reactive({
-    fullName: '',
-    email: '',
-    phone: '',
-    company: '',
-    jobTitle: '',
-    shippingAddress: '',
-  });
+  const attendee = reactive(emptyAttendee());
   const ticketId = ref(null);
 
   // Step 2 — selected session ids.
@@ -67,6 +64,21 @@ export function createRegistration() {
   const isFirstStep = computed(() => currentStep.value === 0);
   const isLastStep = computed(() => currentStep.value === STEPS.length - 1);
 
+  /**
+   * Clear every selection back to the pristine entry state (Step 1, nothing chosen).
+   * The post-submit flow is terminal (D15/D40) — this is the only path back into a fresh
+   * wizard, driven by the success screen's "Back to Home".
+   */
+  function reset() {
+    currentStep.value = 0;
+    Object.assign(attendee, emptyAttendee());
+    ticketId.value = null;
+    selectedSessionIds.value = [];
+    selectedWorkshopIds.value = [];
+    selectedMealIds.value = [];
+    for (const id of Object.keys(merchSelections)) delete merchSelections[id];
+  }
+
   return {
     STEPS,
     currentStep,
@@ -81,6 +93,7 @@ export function createRegistration() {
     prev,
     isFirstStep,
     isLastStep,
+    reset,
   };
 }
 

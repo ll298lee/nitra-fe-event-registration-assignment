@@ -773,3 +773,33 @@ Two post-review touch-ups on PR #17.
 
 179 tests green, `yarn check` clean. Tests: `StepAddons.spec.js` gains a `flex-nowrap` assertion on
 the banner to guard the icon-on-top regression; the font check needed no code, so no new test.
+
+## feat(review): step 4 async submit + terminal success screen
+
+The final Step-4 piece (D40, README §4.6): a valid submit now calls the async facade, shows a pending
+state, and lands on the terminal success screen (frame `1075:903`).
+
+- **Async submit + pending + double-submit guard.** On the last step `onPrimary` runs the unified
+  validation first (an invalid submit still just reveals the errors and never hits the network); a
+  valid submit sets an `isSubmitting` flag, awaits `submitRegistration(snapshot)`, and stores the
+  returned confirmation number. The primary button disables and swaps its label for a `q-spinner`
+  while in flight, and `onPrimary` short-circuits if already submitting — so a double-click can't fire
+  a second submit (guarded two ways). The pending affordance has no Figma frame — a flagged spec-gap fill.
+- **Terminal success screen.** A non-null confirmation number is the terminal state: the stepper +
+  steps + footer give way to a centered `SuccessScreen` (the header stays), matching `1075:903` — a
+  green check circle, "Registration Complete!", the confirmation number, a personalized two-line
+  thank-you, and a single "Back to Home" CTA. Every measured value verified in-browser via
+  `getComputedStyle` @1440px (full pass, zero deviation).
+- **Judgment calls (D40):** (a) the submission lifecycle (`isSubmitting`/`confirmationNumber`) lives in
+  the shell, not the store — the store owns form/nav state and gains a `reset()`, the shell already owns
+  async orchestration. (b) `SuccessScreen` is presentational (props + `home` emit), so it unit-tests
+  without a store. (c) The greeting uses the **first name** and the confirmation reads "Confirmation #"
+  - the facade's `WDS-XXXXXXXX` (the frame's "John"/"TC2025-47291" are placeholders, §4). (d) "Back to
+    Home" is the only path back — it resets the store + validation to a pristine Step 1 (no "register
+    another", no read-only back-nav).
+
+184 tests green, `yarn check` clean. Tests: `SuccessScreen.spec.js` (new) — renders the confirmation
+heading/number + personalized thank-you, emits `home`. `IndexPage.spec.js` — a valid submit shows the
+success screen with the confirmation # + dynamic name/email; a double-submit is guarded while in
+flight; "Back to Home" resets to a pristine Step 1. `facade.test.js` already covered the
+confirmation-number format + echo.
