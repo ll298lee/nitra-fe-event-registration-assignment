@@ -4,10 +4,19 @@ dist
 *.local
 .DS_Store
 
-# Claude Code skills (local tooling — installed skill contents stay local;
-# skills-lock.json is tracked so the skill set is reproducible)
+# Claude Code — project config (agents/commands/hooks/skills/settings.json) is tracked;
+# local state (settings.local.json, worktrees, locks) and installed skill contents stay
+# local. skills-lock.json is tracked so the skill set is reproducible.
 .agents/
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/commands/
+!.claude/hooks/
+!.claude/skills/
+!.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
 tmp.md
 
 # Yarn (Berry)

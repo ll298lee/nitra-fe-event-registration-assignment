@@ -1133,3 +1133,15 @@ journal, `IMPLEMENTATION_PLAN.md`, and the conversations of all 25 merged PRs.
   read-only per §1.2 (its `PLAN.md` mentions mean the submission doc, which still exists).
 - Also refreshed this intro's stale "current state" note (it still called the wizard "the
   next phase").
+
+## chore(sdd): make project Claude Code config trackable
+
+Groundwork for the SDD-workflow v2 migration (parallel worktree sessions, per-feature spec
+packs — plan approved this session). `.gitignore` ignored `.claude/` wholesale, so no
+project-level agents, commands, hooks, or settings could ever be committed — and a fresh
+worktree checkout would contain zero Claude Code config. Replaced the blanket ignore with
+`.claude/*` + targeted negations (`agents/`, `commands/`, `hooks/`, `skills/`,
+`settings.json` tracked; `settings.local.json`, `worktrees/`, `scheduled_tasks.lock` still
+ignored), committed the 7 existing skill symlinks, and added `.worktreeinclude` (`.agents/`,
+`settings.local.json`, `tmp.md`) so relative skill symlinks resolve inside future worktrees.
+Verified with `git check-ignore -v` + `git status --ignored` that no local state stages.
